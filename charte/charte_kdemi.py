@@ -4,6 +4,7 @@ Symbole : l'arche cintrée (portail et niches du projet).
 Couleurs : terre cuite, iroko, sable, blanc chaux, encre ; olive en appoint.
 Typographies : DM Serif Display (titres, logo), Jost (texte, légendes).
 """
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
@@ -11,7 +12,7 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.patches import PathPatch, Rectangle
 from matplotlib.path import Path
 
-FD = "/tmp/claude-0/-home-user/5dfc2a2e-f67b-5d7c-bd12-e0811e213d4e/scratchpad/fonts/"
+FD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts") + os.sep
 F_TITRE = FD + "dm-serif-display-latin-400-normal.ttf"
 F_TITRE_I = FD + "dm-serif-display-latin-400-italic.ttf"
 F_LIGHT = FD + "jost-latin-300-normal.ttf"
@@ -36,6 +37,7 @@ SABLE_CLAIR = "#F4EDE2"  # fond de panneau, alternance de lignes
 BLANC_CHAUX = "#FBF8F3"  # fond de page
 OLIVE = "#5F7A4B"        # dégagements, végétal (usage restreint)
 POCHE = "#4A403A"        # murs coupés
+INDIGO = "#2F3E6E"       # accent D.A. V5 « terre, ombre et bois » (usage ponctuel)
 
 def arch_path(x0, x1, z0, z_spring, n=48):
     r = (x1 - x0) / 2; c = (x0 + x1) / 2

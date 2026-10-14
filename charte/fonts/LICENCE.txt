@@ -1,0 +1,3 @@
+DM Serif Display (Colophon Foundry / Frank Grießhammer) et Jost (Owen Earl / indestructible type*)
+sont distribuées sous SIL Open Font License 1.1 — https://openfontlicense.org
+Fichiers TTF sous-ensemble « latin » issus de Fontsource.
