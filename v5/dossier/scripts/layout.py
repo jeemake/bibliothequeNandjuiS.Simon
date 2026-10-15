@@ -13,7 +13,9 @@ G = 5.0
 ENCRE="#4A4A4A"; TAUPE="#8C8C8C"; TERRE="#B4583E"; IROKO="#9A6B43"; SABLE="#E6D6BF"; SABLE_CL="#FFFFFF"; CHAUX="#FFFFFF"; OLIVE="#5F7A4B"; INDIGO="#2F3A56"; FILET="#C8C8C8"; GRIS_CL="#F4F4F4"
 # charte v2 (15/10/2026) : papier blanc, texte gris, Archivo seule famille, terre cuite en accent
 LOGO = B + "/KDemi_v3_A_arche_lockup_mono.png"; LOGO_INV = B + "/KDemi_v3_A_arche_lockup_inverse_gris.png"; LOGO_COL = B + "/KDemi_v3_A_arche_lockup.png"
-R = B + "/rendus/"; V = B + "/repo/v5/vues_rendu/"; DES = B + "/repo/v5/dessins/"
+R = B + "/rendus/"; V = B + "/repo/v5/vues_rendu/"; GZ = B + "/repo/v5/dossier/rendus/"
+DES = B + "/repo/v5/dessins/"
+NG = 3   # pages « Decimo, côté Gen Z » insérées après R3, avant T01
 TECH = json.load(open(OUT + "/tech.json")) if os.path.exists(OUT + "/tech.json") else {}
 
 def crop(src, w, h, name, focus=(0.5, 0.5), dpi=220):
@@ -74,7 +76,7 @@ def panel(els, code, title, sub, meta, sections, planche, echelle="sans échelle
     # cartouche
     els.append(("line", TX, 246, TX + TW, 246, FILET, 0.3))
     rows = [("Projet", "Bibliothèque Decimo · RDC sous logements, Deux Plateaux, Abidjan"), ("Phase", "ESQ V5 · aménagement sur existant V4"),
-            ("Planche", planche), ("Échelle", echelle + " · format A3 paysage"), ("Maquette", "v5/DECIMO_ESQ_V5.ifc (IFC4)"), ("Date", "15 octobre 2026 · indice E")]
+            ("Planche", planche), ("Échelle", echelle + " · format A3 paysage"), ("Maquette", "v5/DECIMO_ESQ_V5.ifc (IFC4)"), ("Date", "15 octobre 2026 · indice F")]
     yy = 249.5
     for a, b in rows:
         els.append(("text", TX, yy, 22, a, S("lab"))); els.append(("text", TX + 22, yy, TW - 22, b, S("val"))); yy += 4.6
@@ -113,7 +115,7 @@ def ghost(code):
     return p
 
 def tech_page(i, code, nom, base, contenu, donnees):
-    n = f"{16+i:02d}"
+    n = f"{16+NG+i:02d}"
     real = [f for f in (os.listdir(TDIR) if os.path.isdir(TDIR) else []) if f.startswith(code) and f.endswith(".pdf")]
     if real:
         f = TDIR + real[0]; png = f[:-4] + ".png"
@@ -161,7 +163,7 @@ def pages():
     e.append(("line", TX, 242, TX + TW, 242, FILET, 0.3))
     e.append(("text", TX, 246, TW, "DOSSIER DE PRÉSENTATION", S("lab", size=6.8)))
     e.append(("text", TX, 251, TW, "D.A · plans · coupe · élévations · vues 3D · axonométries · électricité · plomberie · détails techniques", S("small")))
-    e.append(("text", TX, 263, TW, "15 octobre 2026 · indice E", S("small")))
+    e.append(("text", TX, 263, TW, "15 octobre 2026 · indice F", S("small")))
     e.append(("text", TX, 274, TW, "En couverture : l'arbre à livres sous l'oculus indigo, rendu tiré de la vue 04 de la maquette IFC V5", S("cap")))
     e.append(("text", TX, 289, 60, "K&Démi · architecture · intérieur", S("foot")))
     e.append(("text", TX + TW - 60, 289, 60, "01", S("foot_r")))
@@ -189,9 +191,10 @@ def pages():
     som = [("Couverture", "01"), ("Le projet", "02"), ("Identité K&Démi", "03"), ("D.A de la bibliothèque", "04"),
            ("A01 Plan du RDC, aménagement", "05"), ("A02 Faux-plafond et réseaux", "06"), ("A03 Coupe AA", "07"), ("A04 Élévation de la devanture", "08"),
            ("A05 Élévations intérieures Est, Nord", "09"), ("A06 Élévations intérieures Sud, Ouest", "10"), ("A07 Vues 3D de la maquette", "11"), ("A08 Axonométries", "12"),
-           ("R1 Rendu de la devanture", "13"), ("R2 Rendus intérieurs", "14"), ("R3 L'arbre à livres", "15")]
-    som += [(f"{c} {t}", f"{16+i:02d}") for i, (c, t, *_r) in enumerate(TPAGES)]
-    som += [("Cohérence et points ouverts", f"{16+len(TPAGES):02d}")]
+           ("R1 Rendu de la devanture", "13"), ("R2 Rendus intérieurs", "14"), ("R3 L'arbre à livres", "15"),
+           ("G1 Decimo, côté Gen Z", "16"), ("G2 Les moments à partager", "17"), ("G3 Les 5 touches sur le plan", "18")]
+    som += [(f"{c} {t}", f"{16+NG+i:02d}") for i, (c, t, *_r) in enumerate(TPAGES)]
+    som += [("Cohérence et points ouverts", f"{16+NG+len(TPAGES):02d}")]
     esp = [("01 Salle de lecture", "24,07 m²"), ("02 Coin lecture, vitrine", "6,68 m²"), ("03 Salle de réunion", "7,21 m²"), ("04 Rangement", "1,37 m²"),
            ("05 Placard technique", "0,24 m²"), ("06 Dégagement", "1,11 m²"), ("07 WC", "2,87 m²"), ("Total intérieur", "43,55 m²"), ("08 Terrasse couverte", "15,74 m²")]
     panel(e, "02", "Le projet", "Une salle de lecture fraîche en pied d'immeuble", "Esquisse V5 · existant V4 inchangé",
@@ -312,6 +315,55 @@ def pages():
            ("Dans la maquette", "Modélisé en IfcFurniture sculptural au centre de la salle de lecture, avec l'oculus en IfcCovering et l'anneau en IfcLightFixture. Il est fixé sous la dalle sans la traverser : la charge, l'ancrage et la réaction au feu restent à valider par le BET.", "p")],
           "15 · R3 L'arbre à livres")
     P.append(("page", e, "R3"))
+
+    # ---------------- G1 à G3 : Decimo, côté Gen Z (rendus tirés des vues IFC, IFC inchangé)
+    e = []
+    e.append(("img", crop(GZ + "G1_rue_crepuscule.jpg", CW, 160, "g1", focus=(0.5, 0.6)), X0, Y0, CW, 160))
+    caption(e, X0, 176.5, CW, "G1 · La devanture à l'heure bleue : guirlande 2700 K sous la pergola V4, jardinières plantées, vitrine allumée")
+    hw = (CW - G) / 2
+    e.append(("img", crop(V + "01_devanture_rue_pieton_ombre.png", hw, 69, "g1_s1"), X0, 186, hw, 69))
+    e.append(("img", crop(V + "01_devanture_rue_pieton_traits.png", hw, 69, "g1_s2"), X0 + hw + G, 186, hw, 69))
+    caption(e, X0, 257, hw, "Vue source 01 : maquette IFC V5 ombrée, même caméra")
+    caption(e, X0 + hw + G, 257, hw, "Vue source 01 : traits et silhouettes")
+    panel(e, "16", "Decimo, côté Gen Z", "Un lieu où l'on a envie d'aller", "Rendus tirés des vues de la maquette IFC V5",
+          [("L'intention", "Le projet reste tel quel : rayonnages, arbre à livres, arches, claustra Adinkra, terre cuite, iroko et sable, accents indigo, lumière 2700 K. On ajoute seulement cinq petites touches, chaleureuses et peu coûteuses, qui donnent envie de venir, de rester et de prendre une photo.", "p"),
+           ("Ce que l'on voit", "La terrasse le soir : une guirlande 2700 K tendue sous la pergola de la V4, de vraies jardinières plantées de ficus lyrata et de strelitzia le long de la façade, la vitrine du coin lecture allumée. Les tables de terrasse et les jarres sur socle sont celles de la maquette.", "p"),
+           ("Contrôle", "Même caméra que la vue source 01, mêmes baies, même portail, pas de balcon sur l'immeuble. Écarts restants : la toiture de la pergola est rendue droite au lieu de sa double ondulation, deux bacs plantés et un muret ont été ajoutés hors de la pergola, aux deux extrémités. Image recadrée à droite pour retirer un reste du houppier modélisé. La maquette fait foi.", "p")],
+          "16 · G1 Decimo, côté Gen Z")
+    P.append(("page", e, "G1"))
+    e = []
+    e.append(("img", crop(GZ + "G2_vitrine_coin_lecture.jpg", CW, 141, "g2", focus=(0.5, 0.55)), X0, Y0, CW, 141))
+    caption(e, X0, 157.5, CW, "G2a · La vitrine du coin lecture : assise sous l'arche, plaid indigo et terre cuite, lampe de lecture, pile « coup de cœur » visible de la rue")
+    e.append(("img", crop(GZ + "G3_accueil_vignette.jpg", hw, 98, "g3"), X0, 166, hw, 98))
+    e.append(("img", crop(GZ + "G4_arbre_photo.jpg", hw, 98, "g4"), X0 + hw + G, 166, hw, 98))
+    caption(e, X0, 266.5, hw, "G2b · L'accueil : tampon daté, marque-pages kraft, livres-surprises, réglette des coups de cœur")
+    caption(e, X0 + hw + G, 266.5, hw, "G2c · Le soir, la photo de l'arbre à livres et de l'oculus")
+    panel(e, "17", "Les moments à partager", "Lire, tamponner, offrir, photographier", "Rendus tirés des vues 05, 06 et 02 de la maquette",
+          [("Ce que l'on voit", ["Le coin lecture en vitrine devient le fauteuil que l'on photographie : coussins raphia et indigo, plaid tissé, petite lampe, la pile du mois posée sur le podium.",
+                                 "À l'accueil, chacun repart avec un marque-page kraft tamponné à la date du jour, ou un livre-surprise emballé, trois mots écrits dessus.",
+                                 "Sur le mur derrière le comptoir, une réglette en iroko porte les fiches manuscrites des lecteurs.",
+                                 "Le soir, l'arbre à livres et l'anneau de l'oculus font la photo du lieu."], "list"),
+           ("Contrôle", "Vues sources 05, 06 (nouvelle caméra sur l'accueil, v5/scripts/vues_rendu_genz.py) et 02 : murs, baies, comptoir, rayonnages, arbre et luminaires sont à leur place. Écarts restants : en G2a, l'assise de vitrine se prolonge d'environ 1 m sous la baie ovale, alors que le podium de la maquette fait 1,00 m sous l'arche. En G2c, le fût de l'arbre paraît plus plat que le cylindre modélisé. Les personnes sont génériques, vues de dos.", "p")],
+          "17 · G2 Les moments à partager")
+    P.append(("page", e, "G2"))
+    e = []
+    ph = CH - 14; pw_ = ph * 1866 / 2480
+    e.append(("img", crop(GZ + "G5_plan_touches.png", pw_, ph, "g5", dpi=300), X0, Y0, pw_, ph))
+    caption(e, X0, Y0 + ph + 2, pw_, "Extrait du plan A01 (plan de coupe à +1,00), fond gris, sans échelle. Les touches n'entrent pas dans la maquette IFC.")
+    tx = X0 + pw_ + G; tw_ = CW - pw_ - G; th_ = tw_ * 0.62
+    for i, (f, t) in enumerate([("G1_rue_crepuscule.jpg", "G1 · touche 5"), ("G2_vitrine_coin_lecture.jpg", "G2a · touche 4"),
+                                ("G3_accueil_vignette.jpg", "G2b · touches 1, 2, 3"), ("G4_arbre_photo.jpg", "G2c · l'arbre à livres")]):
+        y = Y0 + i * (th_ + 9)
+        e.append(("img", crop(GZ + f, tw_, th_, f"g5_t{i}"), tx, y, tw_, th_)); caption(e, tx, y + th_ + 1.5, tw_, t)
+    panel(e, "18", "Les 5 touches", "Où elles se posent sur le plan", "Aménagement léger, maquette IFC V5 inchangée",
+          [("Les touches", ["Tampon Decimo daté, au comptoir d'accueil C02, avec les marque-pages en kraft.",
+                            "Livres-surprises emballés en kraft, trois mots écrits dessus, dans un panier sur le comptoir.",
+                            "Réglette en iroko des coups de cœur des lecteurs, fiches manuscrites, sur le mur est derrière l'accueil, à hauteur d'yeux.",
+                            "Vitrine du coin lecture : assise sur le podium V05 sous l'arche, plaid indigo et terre cuite, lampe de lecture, pile du coup de cœur du mois tournée vers la rue.",
+                            "Terrasse le soir : guirlande 2700 K sous la pergola V4, jardinières de la façade plantées de ficus lyrata et de strelitzia, pas de banquettes."], "list"),
+           ("Cadre", "Du décor et du petit mobilier, sans toucher aux murs ni aux baies de la V4. La guirlande se branche sur le circuit vitrine et seuil, déjà sur horloge astronomique. Coût faible.", "p")],
+          "18 · G3 Les 5 touches sur le plan")
+    P.append(("page", e, "G3"))
     # ---------------- technique
     for i, tp in enumerate(TPAGES):
         P.append(tech_page(i, *tp))
@@ -329,6 +381,7 @@ def pages():
         ("Placard technique 0,60 × 0,40, porte pleine", "", "IfcSpace 05 et IfcDoor", "A01, A02", ""),
         ("Descentes EU/EV de l'immeuble en coffrage 0,30 × 0,30", "", "Coffrages « à relever sur site »", "A02", ""),
         ("Existant V4 : murs, poteau, ouvertures, emprise 6,78 × 7,68", "", "141 / 141 identiques, 0 pénétration", "toutes", "toutes"),
+        ("Côté Gen Z : tampon, livres-surprises, réglette, vitrine, terrasse le soir", "", "décor et petit mobilier, non modélisés, IFC inchangé", "A01 (extrait p. 18)", "G1, G2"),
         ("Lots techniques : électricité, CFA, AEP, EU, EV, détails", "", "DECIMO_ESQ_V5_tech.ifc : 141/141 V4, 231/231 V5, 0 pénétration", "T01 à T05", ""),
     ]
     y = Y0
@@ -368,10 +421,10 @@ def pages():
     for i, (k, l) in enumerate(TECH.get("kpis") or [("0 erreur", "validation IFC4, natif et variante Revit"), ("141 / 141", "produits V4 identiques en V5"), ("0", "pénétration d'un ajout dans la structure"), ("8", "espaces IfcSpace nommés et métrés")]):
         x = X0 + i * (cw4 + G)
         e.append(("line", x, 250, x + cw4, 250, FILET, 0.3)); e.append(("text", x, 254, cw4, k, S("kpi"))); e.append(("text", x, 266, cw4, l, S("cap", size=7.4, lead=9.4)))
-    panel(e, f"{16+len(TPAGES):02d}", "Cohérence", "D.A, maquette, plans et technique", "Contrôle croisé du 15 octobre 2026",
+    panel(e, f"{16+NG+len(TPAGES):02d}", "Cohérence", "D.A, maquette, plans et technique", "Contrôle croisé du 15 octobre 2026",
           [("Validations", TECH.get("validations", "IFC4 natif et variante maillée pour Revit : 0 erreur au validateur ifcopenshell 0.9.0, schéma et règles EXPRESS. Contre-vérification indépendante sur main : les 141 produits V4 sont retrouvés par GlobalId, placements et géométries identiques (écart 0), emprise 6,78 × 7,68 m, WC 4350629 et lave-mains 4350630/4350631 conservés."), "p"),
            ("Livrables", TECH.get("livrables", "Maquettes v5/DECIMO_ESQ_V5.ifc, DECIMO_ESQ_V5_tech.ifc et variante maillée pour Revit, planches A01 à A08 et T01 à T05 en PDF, PNG et SVG, note technique, vues de rendu avec leurs caméras, rapports de vérification. Tout est sur la branche main du dépôt jeemake/bibliothequeNandjuiS.Simon."), "p"),
            ("Lecture", "Les cotes et surfaces sont indicatives au stade de l'esquisse. L'existant V4 reste à relever sur site avant l'APS.", "p")],
-          f"{16+len(TPAGES):02d} · Cohérence et points ouverts")
+          f"{16+NG+len(TPAGES):02d} · Cohérence et points ouverts")
     P.append(("page", e, "Cohérence"))
     return P

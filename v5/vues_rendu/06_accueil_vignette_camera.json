@@ -1,0 +1,73 @@
+{
+  "vue": "06_accueil_vignette",
+  "description": "Accueil : comptoir iroko C02, siège C05, mur est (tampon, livres-surprises, réglette des coups de cœur)",
+  "source_ifc": "v5/DECIMO_ESQ_V5.ifc",
+  "source_sha256": "985f48d48b54ac23238c42774d7b8b63669e23f919ac7345ce9bac62e21082bc",
+  "camera": {
+    "position_m": [
+      3.75,
+      2.05,
+      1.45
+    ],
+    "cible_m": [
+      5.55,
+      1.05,
+      0.95
+    ],
+    "haut": [
+      0,
+      0,
+      1
+    ],
+    "resolution_px": [
+      2560,
+      1600
+    ],
+    "projection": "perspective",
+    "fov_vertical_deg": 50.0,
+    "fov_horizontal_deg": 73.453,
+    "focale_equivalente_24x36_mm": 24.13,
+    "near_m": 0.05,
+    "far_m": 200
+  },
+  "eclairage": {
+    "shadows": true,
+    "sun_dir": [
+      -0.3,
+      -0.7,
+      0.65
+    ],
+    "sky": [
+      0.98,
+      0.95,
+      0.9
+    ],
+    "ground": [
+      0.86,
+      0.8,
+      0.72
+    ],
+    "sun_col": [
+      1.0,
+      0.9,
+      0.76
+    ],
+    "fill_dir": [
+      0.15,
+      -1.0,
+      0.25
+    ],
+    "fill_k": 0.22,
+    "exposure": 0.92,
+    "emissive": 1.25,
+    "background": [
+      0.95,
+      0.93,
+      0.9
+    ]
+  },
+  "masques": [
+    "sol_ext"
+  ],
+  "script": "python3 v5/scripts/vues_rendu_genz.py"
+}
