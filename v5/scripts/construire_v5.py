@@ -705,7 +705,7 @@ for nm, (cx0, cy0, cx1, cy1) in COFFRAGES.items():
             styled([f.createIfcExtrudedAreaSolid(prof, placement_z(0.004), DZ, (Z_DALLE_SOUS - 0.004) * CM)], "platre"),
             predefined_type="USERDEFINED", ObjectType="Coffrage acoustique", lot=TECH, mat="platre",
             rep_label="Coffrage acoustique 0,30 x 0,30 descente EU/EV (à relever)",
-            description="2 BA13 + laine minérale 45 mm, toute hauteur jusqu'à la dalle ; descente de l'immeuble supposée",
+            description="Parement 2 BA13 hydro (25 mm) + laine minérale 25 mm (ép. 50), toute hauteur jusqu'à la dalle ; trappes de visite ; descente de l'immeuble supposée",
             psets={"KDEMI_Hypothese": {"Statut": "À relever sur site", "Source": "Descentes EU/EV de l'immeuble en hypothèse"}})
     covers("07" if "WC" in nm else "04", c)
     new("IfcPipeSegment", f"Descente {nm} Ø 100 (hypothèse)", styled([cyl(cx, cy, 0.055, 0.0, Z_DALLE_SOUS)], "pvc"),

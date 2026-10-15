@@ -1,6 +1,6 @@
 # Comparaison V4 (existant) / V5
 
-- V4 : `DECIMO_ESQ_V4.ifc` (IFC2X3, 141 produits) ; V5 : `v5/DECIMO_ESQ_V5.ifc` (IFC4, 231 produits)
+- V4 : `DECIMO_ESQ_V4.ifc` (IFC2X3, 141 produits) ; V5 : `v5/DECIMO_ESQ_V5.ifc` (IFC4, 431 produits)
 - Tolérance : 1e-06 m ; géométrie calculée par ifcopenshell.geom 0.9.0 (coordonnées monde, ouvertures déduites)
 
 | Catégorie | Éléments V4 | Retrouvés (GlobalId) | Identiques | Écart max placement (m) | Écart max sommets (m) | Écart max bbox (m) | Représentation identique | Ouvertures/remplissages identiques |
@@ -42,7 +42,7 @@
 
 ## Ajouts V5
 
-- 90 produits ajoutés ; nouvelles ouvertures dans un élément V4 : **0**
+- 290 produits ajoutés ; nouvelles ouvertures dans un élément V4 : **0**
 - Éléments structurels contrôlés (pset KDEMI_Existant « Existant porteur - ne pas toucher ») : 9
 - Pénétrations > 2 mm d'un ajout dans la structure : **0**
 - Auto-contrôle du détecteur : dalle haute ajoutée / volume de contexte « logements » V4 (4350698) -> recouvrement mesuré 0.2 m (attendu 0,20 : le volume V4 démarre à +3,30, signalé en point ouvert)
@@ -57,9 +57,17 @@
 | Tableau loin de l'eau | 5.92 m du WC (lave-mains et WC dans le local 07) | oui |
 | Split mural 9 000 BTU/h - unité intérieure 1 : sur mur plein, en hauteur, hors tables | +2.42 / +2.71 ; fixé sur ['4350588'] ; au-dessus de : aucune table | oui |
 | Split mural 9 000 BTU/h - unité intérieure 2 : sur mur plein, en hauteur, hors tables | +2.30 / +2.59 ; fixé sur ['4350587'] ; au-dessus de : aucune table | oui |
-| Réservations Ø 0,10 hors structure (5) | 0 intersection(s) avec poteaux / voiles / dalle | oui |
+| Réservations hors structure (8 : Ø 0,10 et Ø 0,04) | 0 intersection(s) avec poteaux / voiles / dalle | oui |
 | Liaisons splits : faux-plafond puis baie arrière existante | 2 faisceaux, 0 intersection(s) avec la structure | oui |
 | Coffrages EU/EV 0,30 x 0,30 « À relever sur site » | 2 coffrages [(0.3, 0.3), (0.3, 0.3)] ; statut ['À relever sur site'] | oui |
+| Luminaires 2700 K de la V5 conservés et raccordés | 27 luminaires ; sans circuit : [] | oui |
+| Appareillage électrique rattaché à un circuit du TD | 64 appareils / câbles, 16 circuits ; sans circuit : aucun | oui |
+| BAES au-dessus de la porte d'entrée et en circulation | 4 BAES : ["au-dessus de la porte d'entrée", 'dégagement, vers la salle de lecture', 'coin lecture, passage à galandage', 'circulation salle de lecture (drapeau)'] | oui |
+| Prise du WC hors volumes (≥ 0,60 m du lave-mains) | 1.03 m | oui |
+| WC et lave-mains V4 conservés, non dupliqués, raccordés en V5 | doublons : 0 ; raccords : 4350629 <- ["Flexible d'alimentation du réservoir WC V4", 'Pipe WC Ø 100 (raccord cuvette V4)'] ; 4350630 <- ['Robinet temporisé eau froide (lave-mains V4)'] ; 4350631 <- ['Siphon du lave-mains V4'] | oui |
+| Évacuations EU / EV : pente 1 à 3 % (DTU 60.11), mesurée sur l'axe | 3 tronçons, pentes [1.95, 2.0] % | oui |
+| Fixations non traversantes (ancrage ≤ 60 mm et ≤ 1/3 du support) | 27 fixations ; non conformes : aucune | oui |
+| Raccordements aux réseaux de l'immeuble marqués « à relever » | 6 réseaux ; à relever / vérifier : ['CFO', 'AEP', 'EU', 'EV', 'Condensats des 2 splits (mini-pompes -> EU)', 'VP'] | oui |
 | Pas de toiture, d'escalier, de TGBT ni de groupe électrogène | 0 trouvé(s) | oui |
 
 **Résultat global : CONFORME**

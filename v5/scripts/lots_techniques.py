@@ -248,18 +248,21 @@ def ajouter(B):
         epset(el, circuit, typ, h, extra)
         return el
 
+    def normale(face):
+        return ("+" if face[2] > 0 else "-") + face[0]
+
     def prise(nom, face, u, z, circuit, d0, kind="PC", label=None, desc=None):
         it = fbox(face, u - 0.036, u + 0.036, z - 0.036, z + 0.036, d0, d0 + 0.035)
         if kind == "PC":
-            el = appareil("IfcOutlet", "POWEROUTLET", nom, [it], circuit, "PC 16 A 2P+T à éclips", z, extra={"Socles": 1}, label=label, desc=desc)
+            el = appareil("IfcOutlet", "POWEROUTLET", nom, [it], circuit, "PC 16 A 2P+T à éclips", z, extra={"Socles": 1, "Normale": normale(face)}, label=label, desc=desc)
         else:
-            el = appareil("IfcOutlet", "DATAOUTLET", nom, [it], "VDI", "RJ45 cat. 6A blindée (données)", z, mat="equip_gris", extra={"Socles": 1, "Brassage": "Baie 9U placard technique"},
-                          label=label, desc=desc)
+            el = appareil("IfcOutlet", "DATAOUTLET", nom, [it], "VDI", "RJ45 cat. 6A blindée (données)", z, mat="equip_gris",
+                          extra={"Socles": 1, "Brassage": "Baie 9U placard technique", "Normale": normale(face)}, label=label, desc=desc)
         return el
 
     def commande(cls, ptype, nom, face, u, z, circuit, typ, d0, commande_de, otype=None):
         it = fbox(face, u - 0.045, u + 0.045, z - 0.045, z + 0.045, d0, d0 + 0.035)
-        el = appareil(cls, ptype, nom, [it], circuit, typ, z, extra={"Commande": commande_de}, otype=otype,
+        el = appareil(cls, ptype, nom, [it], circuit, typ, z, extra={"Commande": commande_de, "Normale": normale(face)}, otype=otype,
                       label="Commande d'éclairage (axe +1,10)")
         return el
 
@@ -405,10 +408,10 @@ def ajouter(B):
     PP["ap"] = (3.75, 3.00)
 
     # -- BAES ---------------------------------------------------------------------------------------------------
-    def baes(nom, items, h, desc, pp):
+    def baes(nom, items, h, desc, pp, nrm="plafond"):
         el = new("IfcLightFixture", nom, items, predefined_type="SECURITYLIGHTING", lot=LOT_E, rep_label="BAES évacuation / balisage (SATI, 1 h)",
                  description=desc, psets={"KDEMI_BAES": {"Type": "BAES évacuation SATI", "Autonomie_h": 1.0, "Flux_lm": 45, "Alimentation": "E7 non commandée"}, **HYP})
-        epset(el, "E7", "BAES évacuation SATI 45 lm 1 h", h)
+        epset(el, "E7", "BAES évacuation SATI 45 lm 1 h", h, {"Normale": nrm})
         PP[nom] = pp
         return el
 
@@ -416,11 +419,11 @@ def ajouter(B):
         return styled([fbox(face, u - 0.165, u + 0.165, z0, z0 + 0.12, GAP, GAP + 0.06)], "equip") + \
             styled([fbox(face, u - 0.06, u + 0.06, z0 + 0.03, z0 + 0.09, GAP + 0.06, GAP + 0.062)], "baes")
     B1 = baes("BAES 1 - au-dessus de la porte d'entrée", baes_mur(F["FACE"], 4.10, 2.84), 2.90,
-              "BAES d'évacuation « SORTIE » au-dessus de la porte d'entrée (face intérieure, sur l'enduit terre)", (4.10, 0.16))
+              "BAES d'évacuation « SORTIE » au-dessus de la porte d'entrée (face intérieure, sur l'enduit terre)", (4.10, 0.16), "+y")
     B2 = baes("BAES 2 - dégagement, vers la salle de lecture", baes_mur(F["R08O"], 5.72, 2.20), 2.26,
-              "Balisage au-dessus de la baie libre V4, côté dégagement (sortie vers la salle)", (2.865, 5.72))
+              "Balisage au-dessus de la baie libre V4, côté dégagement (sortie vers la salle)", (2.865, 5.72), "-x")
     B3 = baes("BAES 3 - coin lecture, passage à galandage", baes_mur(("x", 2.91, -1), 1.35, 2.20), 2.26,
-              "Balisage sur la retombée BA13 du passage à galandage, côté coin lecture", (2.865, 1.35))
+              "Balisage sur la retombée BA13 du passage à galandage, côté coin lecture", (2.865, 1.35), "-x")
     B4 = baes("BAES 4 - circulation salle de lecture (drapeau)",
               styled([box(3.52, 4.385, 3.58, 4.715, 2.78, 2.90), cyl(3.55, 4.55, 0.006, 2.90, Z_FP_SOUS)], "equip")
               + styled([box(3.582, 4.49, 3.584, 4.61, 2.81, 2.87), box(3.516, 4.49, 3.518, 4.61, 2.81, 2.87)], "baes"), 2.84,
