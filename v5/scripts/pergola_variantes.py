@@ -108,6 +108,42 @@ def vue3d(sc2, k):
     sh.save(f"{OUT}/P{k}_vue01.png", optimize=True); tr.save(f"{OUT}/P{k}_traits.png", optimize=True)
 
 
+AXO_CAM = dict(position=(3.3 - 9.0, -1.3 - 15.0, 1.6 + 11.5), target=(3.3, -1.3, 1.6), ortho_h=7.3)   # rue, sud-ouest, ~35°
+AXO_MASQUE = ("logements", "fenetre_logt", "voisin", "arbre", "sol_ext", "trottoir", "plafond")
+
+
+def axo(sc2, k):
+    """Axonométrie blanche : façade du RDC coupée à +3,60 et à 0,60 m derrière le nu, pergola en iroko."""
+    T, C, I = triangles(sc2, lambda e: role(e) not in AXO_MASQUE and e["verts"][:, 1].min() < 0.6)
+    Tc, Cc, Ic = [], [], []
+    for i in np.unique(I):
+        m = I == i
+        t = D.couper_demi_espace(D.couper_demi_espace(T[m], np.array([0, 0, 1.0]), 3.60), np.array([0, 1.0, 0]), 0.60)
+        if not len(t): continue
+        e = sc2[i]; pv = e["tag"].startswith("PV")
+        c = np.tile(C[m].mean(0) if not pv else C[m][0], (len(t), 1)) if not pv else None
+        if pv:   # couleur par triangle conservée (iroko, acier, ampoules) après découpe : recalcul par centre
+            c = np.tile(C[m][0], (len(t), 1))
+            cols = np.unique(C[m], axis=0)
+            if len(cols) > 1:
+                cen = T[m].mean(1); ct = t.mean(1)
+                from scipy.spatial import cKDTree
+                c = C[m][cKDTree(cen).query(ct)[1]]
+            c = c.copy(); lampe = c[:, 0] > 0.98
+            c[~lampe, :3] = 0.30 + 0.70 * c[~lampe, :3]          # iroko et acier adoucis, ampoules intactes
+        else:
+            c = c.copy(); c[:, :3] = 0.84 + 0.14 * c[:, :3]; c[:, 3] = 1.0
+        Tc.append(t); Cc.append(c); Ic.append(np.full(len(t), i))
+    gr = np.array([[-0.6, -3.4, -0.02], [7.2, -3.4, -0.02], [7.2, 0.6, -0.02], [-0.6, 0.6, -0.02]])
+    T1 = np.concatenate(Tc + [gr[[0, 1, 2]][None], gr[[0, 2, 3]][None]])
+    C1 = np.concatenate(Cc + [np.tile((0.93, 0.92, 0.90, 1.0), (2, 1))]); I1 = np.concatenate(Ic + [[len(sc2), len(sc2)]])
+    sh, tr = render(T1, C1, I1, AXO_CAM, size=(2000, 1500), ss=2, sun_dir=(-0.45, -0.35, 0.82), sky=(0.93, 0.92, 0.90),
+                    ground=(0.65, 0.60, 0.55), background=(1, 1, 1), exposure=1.0, ao=0.4)
+    from PIL import Image
+    img = Image.fromarray((np.asarray(sh, float) * (0.6 + 0.4 * np.asarray(tr, float)[..., None] / 255)).astype(np.uint8))
+    img.save(f"{OUT}/P{k}_axo.png", optimize=True)
+
+
 def fig_mm(w, h):
     f = plt.figure(figsize=(w / 25.4, h / 25.4)); ax = f.add_axes([0, 0, 1, 1]); ax.axis("off"); ax.ech = 100; return f, ax
 
@@ -133,12 +169,12 @@ def plan(sc2, k):
     f.savefig(f"{OUT}/P{k}_plan.png", dpi=300); plt.close(f)
 
 
-def coupe(sc2, k):
-    xl, zl = (-3.35, 0.95), (-0.25, 4.05)            # 1/100 : 43 x 43 mm, coupe x = 4,40 vers l'ouest
+def coupe(sc2, k, xl=(-3.35, 0.95), zl=(-0.25, 4.05), nom="coupe", sans=()):
+    """Coupe x = 4,40 vers l'ouest, 1/100 (43 x 43 mm par défaut)."""
     f, ax = fig_mm((xl[1] - xl[0]) * 10, (zl[1] - zl[0]) * 10)
     ax.set_xlim(*xl); ax.set_ylim(*zl); ax.set_aspect("equal")
     v = D.Vue((-1, 0, 0), (0, 1, 0), (0, 0, 1), coupe=((1, 0, 0), 4.4003))
-    R = D.calculer(sc2, v, lambda e, r: r not in ("sol_ext", "arbre", "voisin", "logements", "fenetre_logt"))
+    R = D.calculer(sc2, v, lambda e, r: r not in ("sol_ext", "arbre", "voisin", "logements", "fenetre_logt") + tuple(sans))
     ax.add_patch(plt.Rectangle((xl[0], zl[0]), xl[1] - xl[0], -0.0 - zl[0], fc="#E2DDD6", ec="none", zorder=1))
     DS.peindre(ax, R, ombre=calculer_ombres(R, v, xl, zl, "elev"), veg="elev")
     DS.pocher(ax, R)
@@ -146,15 +182,17 @@ def coupe(sc2, k):
     pv = [r["e"] for r in R if r["e"]["tag"] == f"PV{k}"][0]
     top, bas = pv["verts"][:, 2].max(), {1: 2.90, 2: 2.88, 3: 2.32}[k]
     for zz in (top,):          # sous-face donnée dans le tableau de la planche
-        DS.niveau(ax, -3.05, zz, f"+{zz:.2f}".replace(".", ","))
-    f.savefig(f"{OUT}/P{k}_coupe.png", dpi=300); plt.close(f)
+        DS.niveau(ax, xl[0] + 0.30, zz, f"+{zz:.2f}".replace(".", ","))
+    f.savefig(f"{OUT}/P{k}_{nom}.png", dpi=300); plt.close(f)
 
 
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     sc = charger()
-    ks = [int(a) for a in sys.argv[1:]] or [1, 2, 3]
+    ks = [int(a) for a in sys.argv[1:] if a.isdigit()] or [1, 2, 3]
     for k in ks:
         sc2 = scene_variante(sc, k)
-        vue3d(sc2, k); plan(sc2, k); coupe(sc2, k)
+        if os.environ.get("PERGOLA_AXO"):    # planche allégée (indice H) : axonométrie + petite coupe
+            axo(sc2, k); coupe(sc2, k, xl=(-3.05, 0.40), zl=(-0.15, 3.85), nom="coupe_s", sans=("mobilier",)); continue
+        vue3d(sc2, k); plan(sc2, k); coupe(sc2, k); axo(sc2, k)
         print("variante", k)

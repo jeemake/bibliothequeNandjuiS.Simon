@@ -1,6 +1,8 @@
-# Dossier de présentation, Bibliothèque Decimo, ESQ V5 (indice G, 15 octobre 2026)
+# Dossier de présentation, Bibliothèque Decimo, ESQ V5 (indice H, 15 octobre 2026)
 
 A3 paysage, 25 pages, charte K&Démi v2 : papier blanc, texte gris (#4A4A4A, secondaire #8C8C8C), une seule famille Archivo (titres SemiBold, texte Regular, capitales Medium), terre cuite en accent, indigo rare, logo v3 A. Grille invisible : marges 14 mm, gouttières 5 mm, panneau de droite commun avec les planches A01 à A08 et T01 à T05.
+
+Indice H : page 19 « Pergola, trois variantes » allégée à la demande de JM. Une ligne par option (1 simple, 2 entre-deux, 3 Gen Z) : axonométrie blanche depuis la rue, même angle pour les trois (`v5/pergola/P{1,2,3}_axo.png`), petite coupe au 1/100 sur la porte (`P{1,2,3}_coupe_s.png`), deux chiffres clés, une phrase et le niveau de coût. Plus de vue perspective ni de plan de toiture sur la page, panneau de droite réduit au cadre et au point ouvert de l'option 3 (retombée d'arc devant la porte). Script `v5/scripts/pergola_variantes.py` (PERGOLA_AXO=1 pour ces sorties), aucun fichier IFC modifié, pas de fal. Le reste du dossier est inchangé.
 
 Indice G : page 19 « Pergola, trois variantes » (G4), avant les planches T01 à T05, qui passent en pages 20 à 24. Même emprise, mêmes appuis et même profondeur que la pergola V4 : 1 simple (lattes iroko droites sur cadre acier noir, coût faible), 2 entre-deux (une vague, rives alternées, deux guirlandes 2700 K, coût moyen), 3 Gen Z (six arcs iroko en enfilade, arche du logo, ampoules 2700 K, coût moyen à élevé). Pour chaque option : vue 01 (même caméra que R1 et G1), plan de toiture et coupe au 1/100. Géométrie par script hors maquette (`v5/scripts/pergola_variantes.py`, sorties dans `v5/pergola/`), aucun fichier IFC modifié, pas de rendu fal. Le reste du dossier est inchangé (contrôle pixel avant/après, seuls l'indice et le sommaire bougent).
 

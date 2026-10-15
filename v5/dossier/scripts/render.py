@@ -56,7 +56,7 @@ def build_pdf(out):
                 blank.merge_transformed_page(src, Transformation().scale(s).translate((tw - sw * s) / 2, (th - sh * s) / 2)); wr.add_page(blank)
             else:
                 wr.add_page(src)
-    wr.add_metadata({"/Title": "Bibliothèque Decimo · Esquisse V5 · dossier de présentation · indice G", "/Author": "K&Démi"})
+    wr.add_metadata({"/Title": "Bibliothèque Decimo · Esquisse V5 · dossier de présentation · indice H", "/Author": "K&Démi"})
     wr.compress_identical_objects(); wr.write(out)
 
 def build_pptx(out):
@@ -96,6 +96,6 @@ def build_pptx(out):
     pr.save(out)
 
 if __name__ == "__main__":
-    build_pdf(L.OUT + "/Decimo_ESQ_V5_Dossier_A3_v7.pdf")
-    if "--pptx" in sys.argv: build_pptx(L.OUT + "/Decimo_ESQ_V5_Dossier_A3_v7.pptx")
+    build_pdf(L.OUT + "/Decimo_ESQ_V5_Dossier_A3_v8.pdf")
+    if "--pptx" in sys.argv: build_pptx(L.OUT + "/Decimo_ESQ_V5_Dossier_A3_v8.pptx")
     print("pages", len(P))

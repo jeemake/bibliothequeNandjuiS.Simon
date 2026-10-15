@@ -77,7 +77,7 @@ def panel(els, code, title, sub, meta, sections, planche, echelle="sans échelle
     # cartouche
     els.append(("line", TX, 246, TX + TW, 246, FILET, 0.3))
     rows = [("Projet", "Bibliothèque Decimo · RDC sous logements, Deux Plateaux, Abidjan"), ("Phase", "ESQ V5 · aménagement sur existant V4"),
-            ("Planche", planche), ("Échelle", echelle + " · format A3 paysage"), ("Maquette", "v5/DECIMO_ESQ_V5.ifc (IFC4)"), ("Date", "15 octobre 2026 · indice G")]
+            ("Planche", planche), ("Échelle", echelle + " · format A3 paysage"), ("Maquette", "v5/DECIMO_ESQ_V5.ifc (IFC4)"), ("Date", "15 octobre 2026 · indice H")]
     yy = 249.5
     for a, b in rows:
         els.append(("text", TX, yy, 22, a, S("lab"))); els.append(("text", TX + 22, yy, TW - 22, b, S("val"))); yy += 4.6
@@ -164,7 +164,7 @@ def pages():
     e.append(("line", TX, 242, TX + TW, 242, FILET, 0.3))
     e.append(("text", TX, 246, TW, "DOSSIER DE PRÉSENTATION", S("lab", size=6.8)))
     e.append(("text", TX, 251, TW, "D.A · plans · coupe · élévations · vues 3D · axonométries · électricité · plomberie · détails techniques", S("small")))
-    e.append(("text", TX, 263, TW, "15 octobre 2026 · indice G", S("small")))
+    e.append(("text", TX, 263, TW, "15 octobre 2026 · indice H", S("small")))
     e.append(("text", TX, 274, TW, "En couverture : l'arbre à livres sous l'oculus indigo, rendu tiré de la vue 04 de la maquette IFC V5", S("cap")))
     e.append(("text", TX, 289, 60, "K&Démi · architecture · intérieur", S("foot")))
     e.append(("text", TX + TW - 60, 289, 60, "01", S("foot_r")))
@@ -366,42 +366,36 @@ def pages():
            ("Cadre", "Du décor et du petit mobilier, sans toucher aux murs ni aux baies de la V4. La guirlande se branche sur le circuit vitrine et seuil, déjà sur horloge astronomique. Coût faible.", "p")],
           "18 · G3 Les 5 touches sur le plan")
     P.append(("page", e, "G3"))
-    # ---------------- 19 pergola, trois variantes (géométrie hors IFC, v5/scripts/pergola_variantes.py)
+    # ---------------- 19 pergola, trois variantes (indice H : planche allégée, axonométries ; v5/scripts/pergola_variantes.py)
     e = []
     cw3 = (CW - 2 * G) / 3
-    VAR = [("1 · Simple", "Lattes droites sur cadre acier", "Faible",
-            "Cadre en acier noir de 80 mm, lattes d'iroko 40 × 60 tous les 10 cm. L'ombre rayée la plus calme, la plus simple à poser et à entretenir.",
-            [("Poteaux", "acier 80 × 80"), ("Lattes iroko", "66 · 40 × 60"), ("Sous-face / dessus", "+2,90 / +3,12")]),
-           ("2 · Entre-deux", "Une vague, rives alternées", "Moyen",
-            "Ossature et poteaux en iroko, lames de 34 mm sur une seule vague douce et rives alternées, deux guirlandes 2700 K. Le rythme se photographie sans changer d'esprit.",
-            [("Poteaux", "iroko 100 × 100"), ("Lames iroko", "79 · 34 mm, vague +3,10 à +3,30"), ("Sous-face", "+2,88"), ("Guirlandes", "2 · 2700 K")]),
-           ("3 · Gen Z", "Arcades en enfilade", "Moyen à élevé",
-            "Six arcs en iroko lamellé-collé qui reprennent l'arche du logo et du portail, ampoules 2700 K sur l'arc côté rue. La devanture devient un cadre photo.",
-            [("Poteaux", "iroko 120 × 120"), ("Arcs iroko", "6 · ép. 50, 3 arches de 1,80 m"), ("Retombée / dessus", "+2,32 / +3,35"), ("Ampoules", "27 · 2700 K")])]
+    VAR = [("1 · Simple", "Lattes droites sur cadre acier", "Faible", "L'ombre rayée la plus calme, la plus simple à poser.",
+            [("Cadre et poteaux", "acier noir 80 mm"), ("Lattes iroko", "40 × 60 tous les 10 cm")]),
+           ("2 · Entre-deux", "Une vague, rives alternées", "Moyen", "Une vague et des guirlandes, sans changer d'esprit.",
+            [("Lames iroko", "34 mm, vague +3,10 à +3,30"), ("Guirlandes", "2 · 2700 K")]),
+           ("3 · Gen Z", "Arcades en enfilade", "Moyen à élevé", "Les arches du logo en enfilade, un cadre photo sur la rue.",
+            [("Arcs iroko", "6 · arches de 1,80 m"), ("Ampoules", "27 · 2700 K")])]
+    aw = 100; ah = aw * 1500 / 2000; rh = (CH - 10) / 3          # une ligne par option : axonométrie, coupe, texte
     for i, (h, sub, cout, why, rows) in enumerate(VAR):
-        x = X0 + i * (cw3 + G); k = i + 1
-        e.append(("text", x, Y0, cw3, h, S("col_h")))
-        e.append(("text", x, Y0 + 6.5, cw3, sub, S("cap", size=7.4)))
-        e.append(("img", crop(PG + f"P{k}_vue01.png", cw3, 56, f"pg{k}", focus=(0.5, 0.5)), x, Y0 + 13, cw3, 56))
-        caption(e, x, Y0 + 73.5, cw3, "Vue 01 de la maquette, même caméra que R1 et G1")
-        e.append(("img", PG + f"P{k}_plan.png", x, Y0 + 82, 72, 34))
-        caption(e, x, Y0 + 117.5, cw3, "Plan de toiture, 1/100")
-        e.append(("img", PG + f"P{k}_coupe.png", x, Y0 + 127, 43, 43))
-        caption(e, x, Y0 + 171.5, 43, "Coupe sur la porte, vers l'ouest, 1/100")
-        yy = Y0 + 127
+        y = Y0 + i * rh; k = i + 1
+        e.append(("img", crop(PG + f"P{k}_axo.png", aw, ah, f"pga{k}"), X0, y, aw, ah))
+        cw_, chh = 407 / 300 * 25.4, 472 / 300 * 25.4
+        e.append(("img", PG + f"P{k}_coupe_s.png", X0 + aw + 8, y + ah - chh, cw_, chh))
+        tx = X0 + aw + 8 + cw_ + 10; tw = X0 + CW - tx
+        e.append(("text", tx, y + 2, tw, h, S("col_h")))
+        e.append(("text", tx, y + 8.5, tw, sub, S("cap", size=7.4)))
+        yy = y + 17
         for a, b in rows:
-            e.append(("text", x + 46, yy, cw3 - 46, a, S("lab"))); e.append(("text", x + 46, yy + 3.4, cw3 - 46, b, S("val"))); yy += 10.5
-        e.append(("line", x, Y0 + 184, x + cw3, Y0 + 184, FILET, 0.4))
-        e.append(("text", x, Y0 + 188, cw3, why, S("body", size=8, lead=11)))
-        e.append(("text", x, Y0 + 230, cw3, "COÛT INDICATIF", S("lab")))
-        e.append(("text", x, Y0 + 235, cw3, cout, S("kpi", size=18, lead=20)))
-    panel(e, "19", "Pergola, trois variantes", "Du plus simple au plus Gen Z", "Vue 01, plan de toiture et coupe pour chaque option",
-          [("Le cadre", "Même emprise que la pergola de la V4 (6,70 × 2,65 m), mêmes appuis : deux poteaux en rive côté rue et une lisse fixée sur la façade du RDC. Iroko, terre cuite et sable, lumière chaude 2700 K.", "p"),
-           ("Les trois options", ["Simple : la lecture la plus sobre, l'ombre rayée d'aujourd'hui en plus net. Coût faible.",
-                                  "Entre-deux : la même pergola, mais une vague et des guirlandes. Coût moyen.",
-                                  "Gen Z : des arches en enfilade, la photo de la rue. Coût moyen à élevé, le cintrage de l'iroko fait le prix."], "list"),
-           ("Contrôle", "Les trois pergolas sont modélisées par script, hors maquette (v5/scripts/pergola_variantes.py) : la pergola V4 est masquée, aucun fichier IFC n'est modifié. Point à régler en option 3 : la retombée de l'arc central tombe devant la porte, à droite, sous le linteau.", "p")],
-          "19 · G4 Pergola, trois variantes", echelle="1/100 (plans et coupes), vues sans échelle")
+            e.append(("text", tx, yy, tw, a, S("lab"))); e.append(("text", tx, yy + 3.4, tw, b, S("val"))); yy += 9.5
+        e.append(("text", tx, y + 38, tw, why, S("body", size=8, lead=11)))
+        e.append(("text", tx, y + ah - 12, tw, "COÛT INDICATIF", S("lab")))
+        e.append(("text", tx, y + ah - 7, tw, cout, S("kpi", size=16, lead=18)))
+        if i < 2: e.append(("line", X0, y + rh - 5, X0 + CW, y + rh - 5, FILET, 0.3))
+    caption(e, X0, Y0 + CH - 3, CW, "Axonométries depuis la rue, même angle pour les trois options, sans échelle. Coupes sur la porte, vers l'ouest, 1/100.")
+    panel(e, "19", "Pergola, trois variantes", "Du plus simple au plus Gen Z", "Même emprise, mêmes appuis, même profondeur",
+          [("Le cadre", "Remplace la pergola V4 : 6,70 × 2,65 m, deux poteaux côté rue, une lisse sur la façade. Iroko, lumière 2700 K. Maquette IFC inchangée.", "p"),
+           ("Point ouvert", "Option 3 : la retombée de l'arc central tombe devant la porte, à régler.", "p")],
+          "19 · G4 Pergola, trois variantes", echelle="1/100 (coupes), axonométries sans échelle")
     P.append(("page", e, "G4"))
     # ---------------- technique
     for i, tp in enumerate(TPAGES):
