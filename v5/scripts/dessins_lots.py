@@ -865,7 +865,7 @@ def _detail(p, x, y, titre, ech, sc, vue, ulim, vlim, garder=None, notes=(), z_n
     for tx, ty, lx, ly, txt in notes:
         _annote(ax, tx, ty, lx, ly, txt, size=4.8)
     p.T(x, y - 3, f"{titre}  ·  échelle 1/{ech}", 5.4, ENCRE, fontproperties=FP_MEDIUM)
-    echelle_graphique(ax, ulim[0] + 0.04 * (ulim[1] - ulim[0]), vlim[0] + 0.05 * (vlim[1] - vlim[0]), 1, 1.0)
+    echelle_graphique(ax, ulim[0] + 0.04 * (ulim[1] - ulim[0]), vlim[0] + 0.05 * (vlim[1] - vlim[0]), 2, 0.1 if ech <= 10 else 0.2)
     return ax, R
 
 
@@ -933,21 +933,26 @@ def A11(sc):
     v4 = D.Vue((0, 1, 0), (1, 0, 0), (0, 0, 1), coupe=((0, -1, 0), -5.6103))
     ax4, _ = _detail(p, 203, 18, "D4 — Fixations non traversantes (oculus / canopée)", 10, sc, v4, (5.74, 6.55), (2.85, 3.55),
                      lambda e, r: r in ("structure", "technique") or est(e, "Platine", "Suspente", "canopée", "oculus"),
-                     notes=[(6.05, 3.28, 6.38, 3.42, "Platine canopée\nancrage 50 mm / dalle 200 mm"),
-                            (6.22, 3.06, 6.48, 2.92, "Suspente bandeau oculus 40 mm\naucune traversée de dalle")])
-    axi = p.axes(248, 72, (5.85, 6.45), (2.92, 3.08), 10)
-    for e in sc:
-        if est(e, "Platine de pied de l'arbre"):
-            lo, hi = bb(e)
-            if lo[0] > 5.8:
-                D.patch(axi, sbox(lo[0], lo[2], hi[0], hi[2]), fc="white", ec=ENCRE, lw=D.LW[2], z=10)
-    tag(axi, 6.15, 3.02, "Pied arbre : ancrage 30 mm\ndallage 100 mm hyp.", size=4.6)
+                     notes=[(6.05, 3.28, 5.98, 3.45, "Platine canopée\nancrage 50 mm / dalle 200 mm"),
+                            (6.22, 3.06, 6.00, 2.95, "Suspente bandeau oculus 40 mm\naucune traversée de dalle")])
+    pied = [e for e in sc if est(e, "Platine de pied de l'arbre")]
+    e3 = min(pied, key=lambda e: bb(e)[0][1])
+    lo, hi = bb(e3)
+    cx = (lo[0] + hi[0]) / 2
+    axi = p.axes(203, 97, (cx - 0.25, cx + 0.25), (-0.12, 0.05), 10)
+    p.T(203, 94, "D4 bis — Platine de pied de l'arbre (coupe)  ·  échelle 1/10", 5.0, ENCRE, fontproperties=FP_MEDIUM)
+    axi.add_patch(Rectangle((cx - 0.25, -0.10), 0.50, 0.10, fc="#D8D2CA", ec=ENCRE, lw=D.LW[2], hatch="....", zorder=5))
+    D.patch(axi, sbox(lo[0], lo[2], hi[0], hi[2]), fc="#2A2A2A", ec=ENCRE, lw=D.LW[2], z=10)
+    for dx in (-0.025, 0.025):
+        axi.plot([cx + dx, cx + dx], [lo[2], -0.030], color=ENCRE, lw=D.LW[2], ls=(0, (1.5, 1)), zorder=11)
+    _annote(axi, cx, hi[2], cx - 0.10, 0.035, "Équerre acier sous le pied", size=4.6)
+    _annote(axi, cx + 0.025, -0.02, cx + 0.10, -0.06, "Chevilles Ø 6, ancrage 30 mm\ndallage 0,10 hyp. : non traversant", size=4.6)
     v6 = D.Vue((1, 0, 0), (0, 1, 0), (0, 0, 1), coupe=((-1, 0, 0), -4.6003))
     _detail(p, 203, 118, "D6 — Panneau passe-liaisons (baie arrière V4)", 10, sc, v6, (7.00, 7.81), (2.40, 3.55),
             lambda e, r: r not in ("voisin",) and (bb(e)[0][0] > 4.3 or est(e, "Panneau passe", "Réservation R3", "Réservation R4", "Liaison", "split")),
-            notes=[(7.44, 2.68, 7.72, 2.82, "Panneau passe-liaisons\n(imposte baie arrière)"),
-                   (7.50, 2.85, 7.78, 2.98, "R3 / R4 Ø 0,10 dans le panneau"),
-                   (7.38, 3.12, 7.05, 3.28, "Liaisons frigorifiques"), (7.55, 2.42, 7.78, 2.28, "Ouverture V4 inchangée")])
+            notes=[(7.44, 2.68, 7.22, 2.74, "Panneau passe-liaisons\n(imposte baie arrière)"),
+                   (7.50, 2.85, 7.22, 2.95, "R3 / R4 Ø 0,10 dans le panneau"),
+                   (7.38, 3.12, 7.05, 3.28, "Liaisons frigorifiques"), (7.55, 2.48, 7.22, 2.52, "Ouverture V4 inchangée")])
     p.intertitre("Liste des détails")
     for t in ("D1 — Plénum acoustique, chemin C3, suspentes 40 mm", "D2 — Coffrage descente EU/EV 1 (50 mm, trappe)",
               "D3 — Placard technique (AGCP, clim, 9U, TD)", "D4 — Fixations canopée / oculus / pied arbre (KDEMI_Fixation)",
