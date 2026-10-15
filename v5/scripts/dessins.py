@@ -199,6 +199,16 @@ def echelle_graphique(ax, x0, y0, n=4, pas=1.0):
 CONTEXTE = ("logements", "voisin", "fenetre_logt", "sol_ext", "trottoir", "arbre")
 
 
+OMBRE = "#000000"
+
+
+def oriente(g):
+    """Polygones orientés (extérieur direct, trous indirects) : remplissage matplotlib non nul correct pour les trous."""
+    ps = [shapely.geometry.polygon.orient(q, 1.0) for q in shapely.get_parts(g) if q.geom_type == "Polygon" and q.area > 0]
+    return shapely.MultiPolygon(ps) if ps else None
+from ombres import OMBRE_ALPHA, calculer_ombres  # noqa: E402
+
+
 def remplissage(r, it, mode="plan"):
     ro = r["role"]
     if ro == "logements":
@@ -225,15 +235,22 @@ def sourdine(rgb, garde=0.4):
     return tuple(g + (rgb - g) * garde)
 
 
-def peindre(ax, R, mode="plan", trait_items=True, z0=10):
-    """Algorithme du peintre : items remplis (trait fin), silhouette produit (trait moyen)."""
+def peindre(ax, R, mode="plan", trait_items=True, z0=10, ombre=None):
+    """Algorithme du peintre : items remplis (trait fin), silhouette produit (trait moyen).
+    ombre : polygones d'ombre portée (ombres.py), peints sur chaque aplat, sous son trait."""
     z = z0
+    if ombre is not None:
+        shapely.prepare(ombre)
     for r in R:
         ctx = r["role"] in CONTEXTE
         ec = TAUPE if ctx else ENCRE
         for it in r["items"]:
             if r["role"] == "vitrage":
                 D.patch(ax, it["g"], fc=VERRE, ec=ENCRE, lw=D.LW[1], z=z, alpha=0.55)
+            elif ombre is not None and ombre.intersects(it["g"]):
+                D.patch(ax, it["g"], fc=remplissage(r, it, mode), ec="none", z=z)
+                D.patch(ax, oriente(ombre.intersection(it["g"])), fc=OMBRE, ec="none", lw=0, z=z + 0.0002, alpha=OMBRE_ALPHA)
+                D.patch(ax, it["g"], fc="none", ec=ec if trait_items else "none", lw=D.LW[1] * (0.7 if ctx else 1), z=z + 0.0004)
             else:
                 D.patch(ax, it["g"], fc=remplissage(r, it, mode), ec=ec if trait_items else "none", lw=D.LW[1] * (0.7 if ctx else 1), z=z)
             z += 0.001
@@ -413,7 +430,7 @@ def A01(sc):
     R = D.calculer(sc, v, lambda e, r: r not in ("logements", "fenetre_logt"))
     ax.add_patch(Rectangle((xl[0], yl[0]), xl[1] - xl[0], -3.8 - yl[0] - 0.05, fc="#DCD8D2", ec="none", zorder=1))
     label(ax, 3.3, -4.45, "R U E", size=6.5, col=TAUPE, z=500)
-    peindre(ax, R)
+    peindre(ax, R, ombre=calculer_ombres(R, v, ax.get_xlim(), ax.get_ylim(), "plan"))
     pocher(ax, R)
     # au-dessus du plan de coupe (tirets)
     for e in sc:
@@ -477,7 +494,7 @@ def A02(sc):
     v = D.Vue((0, 0, 1), (1, 0, 0), (0, 1, 0), coupe=((0, 0, -1), -2.0003))
     garder = lambda e, r: r not in ("logements", "fenetre_logt", "sol_ext", "trottoir", "arbre", "sol") and e["classe"] != "IfcSlab"
     R = D.calculer(sc, v, garder)
-    z = peindre(ax, R)
+    z = peindre(ax, R, ombre=calculer_ombres(R, v, ax.get_xlim(), ax.get_ylim(), "plan"))
     pocher(ax, R)
     # trame des dalles acoustiques 0,60 x 0,60
     plaf = unary_union([r["tout"] for r in R if r["role"] == "plafond" and "acoustique" in r["e"]["nom"]])
@@ -558,7 +575,7 @@ def A03(sc):
     R = D.calculer(sc, v, lambda e, r: r not in ("sol_ext", "arbre", "voisin"))
     ax.add_patch(Rectangle((xl[0], zl[0]), xl[1] - xl[0], -0.2 - zl[0], fc="#E2DDD6", ec="none", zorder=1))
     ax.plot(xl, [-0.2, -0.2], color=ENCRE, lw=D.LW[2], zorder=2)
-    peindre(ax, R)
+    peindre(ax, R, ombre=calculer_ombres(R, v, ax.get_xlim(), ax.get_ylim(), "int"))
     pocher(ax, R)
     for zz in (6.60, 9.90):
         ax.plot([-0.09, 7.59], [zz, zz], color=TAUPE, lw=D.LW[1], ls=(0, (6, 3)), zorder=95)
@@ -609,7 +626,7 @@ def A04(sc):
     ax.add_patch(Rectangle((xl[0], zl[0]), xl[1] - xl[0], -0.12 - zl[0], fc="#DCD8D2", ec="none", zorder=1))
     ax.add_patch(Rectangle((xl[0], -0.12), xl[1] - xl[0], 0.12, fc="#EDEAE5", ec=TAUPE, lw=D.LW[1], zorder=2))
     ax.plot(xl, [-0.12, -0.12], color=ENCRE, lw=D.LW[4], zorder=3)
-    peindre(ax, R)
+    peindre(ax, R, ombre=calculer_ombres(R, v, ax.get_xlim(), ax.get_ylim(), "elev"))
     pocher(ax, R)
     # arbres d'alignement (devant le plan de coupe : silhouettes en traits fins)
     va = D.Vue((0, 1, 0), (1, 0, 0), (0, 0, 1))
@@ -665,7 +682,7 @@ def A04(sc):
 
 def _elev(p, sc, ax, v, garder, decal_rep, nums, titre, x_titre, y_titre):
     R = D.calculer(sc, v, garder)
-    peindre(ax, R)
+    peindre(ax, R, ombre=calculer_ombres(R, v, ax.get_xlim(), ax.get_ylim(), "int"))
     pocher(ax, R)
     vus = bulles_reperes(ax, R, nums, decal=decal_rep)
     p.T(x_titre, y_titre, titre, 7.5, ENCRE, fontproperties=FP_MEDIUM)
