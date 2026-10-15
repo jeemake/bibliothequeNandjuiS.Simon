@@ -1,0 +1,41 @@
+Lot;Classe;Quantite;Detail;Valeur
+Technique - électricité (hyp. ESQ Ahoua);IfcBuildingElementProxy;2;;
+Technique - électricité (hyp. ESQ Ahoua);IfcCableCarrierSegment;17;;
+Technique - électricité (hyp. ESQ Ahoua);IfcCableSegment;19;;
+Technique - électricité (hyp. ESQ Ahoua);IfcCommunicationsAppliance;1;;
+Technique - électricité (hyp. ESQ Ahoua);IfcJunctionBox;4;;
+Technique - électricité (hyp. ESQ Ahoua);IfcLightFixture;4;;
+Technique - électricité (hyp. ESQ Ahoua);IfcOutlet;30;;
+Technique - électricité (hyp. ESQ Ahoua);IfcSensor;1;;
+Technique - électricité (hyp. ESQ Ahoua);IfcSwitchingDevice;6;;
+Technique - plomberie (hyp. ESQ Ahoua);IfcBuildingElementProxy;2;;
+Technique - plomberie (hyp. ESQ Ahoua);IfcFlowMeter;1;;
+Technique - plomberie (hyp. ESQ Ahoua);IfcPipeFitting;7;;
+Technique - plomberie (hyp. ESQ Ahoua);IfcPipeSegment;10;;
+Technique - plomberie (hyp. ESQ Ahoua);IfcValve;8;;
+Technique - plomberie (hyp. ESQ Ahoua);IfcWasteTerminal;2;;
+Technique - fixations (hyp. ESQ Ahoua);IfcMechanicalFastener;27;;
+Électricité;Longueur câbles totale;;m;214.67
+Électricité;Câble circuit CL1;;m;22.13
+Électricité;Câble circuit CL2;;m;8.46
+Électricité;Câble circuit E1;;m;12.75
+Électricité;Câble circuit E2;;m;23.60
+Électricité;Câble circuit E3;;m;6.91
+Électricité;Câble circuit E4;;m;10.22
+Électricité;Câble circuit E5;;m;26.04
+Électricité;Câble circuit E6;;m;8.41
+Électricité;Câble circuit E7;;m;11.02
+Électricité;Câble circuit P1;;m;5.17
+Électricité;Câble circuit P2;;m;13.03
+Électricité;Câble circuit P3;;m;1.26
+Électricité;Câble circuit P4;;m;5.02
+Électricité;Câble circuit P5;;m;32.70
+Électricité;Câble circuit P6;;m;7.24
+Électricité;Câble circuit VDI;;m;20.69
+Plomberie;AEP;;DN 10 mm · m;0.13
+Plomberie;AEP;;DN 12 mm · m;2.76
+Plomberie;AEP;;DN 15 mm · m;0.95
+Plomberie;AEP;;DN 25 mm · m;0.00
+Plomberie;Condensats;;DN 10 mm · m;15.10
+Plomberie;EU;;DN 32 mm · m;2.73
+Plomberie;EV;;DN 100 mm · m;0.19
