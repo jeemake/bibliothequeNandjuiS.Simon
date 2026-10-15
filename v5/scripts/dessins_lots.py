@@ -205,6 +205,90 @@ def sym_vanne(ax, c, d=(1, 0), col=AEP, z=340, r=1.0, plein=False):
                            fc=col if plein else "white", ec=col, lw=D.LW[1], zorder=z))
 
 
+def sym_compteur(ax, c, col=AEP, z=340, r=1.05):
+    rr = mm(ax, r)
+    ax.add_patch(Circle(c, rr, fc="white", ec=col, lw=D.LW[2], zorder=z))
+    tag(ax, c[0], c[1], "M", size=3.8, col=col, z=z + 0.1)
+
+
+def sym_clapet(ax, c, d=(1, 0), col=AEP, z=340):
+    d = np.asarray(d, float); d /= max(np.linalg.norm(d), 1e-9); t = np.array([-d[1], d[0]])
+    rr = mm(ax, 0.95)
+    ax.add_patch(MPoly([c - t * rr, c + d * rr * 0.9, c + t * rr], closed=True, fc=col, ec=col, lw=D.LW[1], zorder=z))
+
+
+def sym_tee(ax, c, col=ENCRE, z=340):
+    rr = mm(ax, 0.55)
+    ax.add_patch(Circle(c, rr, fc=col, ec=col, lw=D.LW[1], zorder=z))
+
+
+def sym_siphon(ax, c, col=EU_C, z=340):
+    rr = mm(ax, 0.85)
+    ax.add_patch(Wedge(c, rr, 200, 340, width=rr * 0.55, fc="white", ec=col, lw=D.LW[2], zorder=z))
+
+
+LOT_P = "Technique - plomberie (hyp. ESQ Ahoua)"
+
+
+def elements_plom(sc):
+    I = ifc()
+    G = par_guid(sc)
+    out = []
+    for g, p in I["prods"].items():
+        pl = p["ps"].get("KDEMI_Plomberie")
+        if not pl or g not in G:
+            continue
+        out.append(dict(p, guid=g, e=G[g], reseau=pl.get("Reseau", ""), materiau=pl.get("Materiau", ""),
+                        dn=pl.get("DN_mm", ""), dext=pl.get("Diametre_ext_mm", ""), pente=pl.get("Pente_pct", ""),
+                        pmin=pl.get("Pente_min_pct", ""), typ=pl.get("Type", "")))
+    return out
+
+
+def trace_tuyau(ax, pts, reseau, plenum_seuil=2.0, z=220, lw=None):
+    col, _ = RESEAU.get(reseau, (ENCRE, reseau))
+    ls = "-"
+    if reseau == "Condensats":
+        ls = (0, (3, 1.2))
+    if pts[:, 2].min() > plenum_seuil:
+        ls = (0, (4, 1.5)) if ls == "-" else ls
+    ax.plot(pts[:, 0], pts[:, 1], color=col, lw=lw or D.LW[2], ls=ls, zorder=z, solid_capstyle="round")
+
+
+def sym_organe_plom(ax, x, classe, reseau, n=None):
+    c = centre_xy(x["e"]) if "e" in x else centre_xy(x)
+    col, _ = RESEAU.get(reseau, (AEP, ""))
+    if classe == "IfcValve":
+        t = "clapet" if x.get("ptype") in ("CHECK", "ANTIVACUUM") or "clapet" in (x.get("nom") or "").lower() else "vanne"
+        if t == "clapet":
+            sym_clapet(ax, c, (1, 0) if n is None else n, col=COND if reseau == "VP" else col)
+        else:
+            sym_vanne(ax, c, (1, 0) if n is None else n, col=col)
+    elif classe == "IfcFlowMeter":
+        sym_compteur(ax, c, col=col)
+    elif classe == "IfcPipeFitting":
+        sym_tee(ax, c, col=col if reseau != "EV" else EV_C)
+    elif classe == "IfcWasteTerminal":
+        sym_siphon(ax, c, col=col if reseau != "Condensats" else COND)
+    return c
+
+
+def longueur_reseaux(I, sc):
+    G = par_guid(sc)
+    par = defaultdict(lambda: {"L": 0.0, "dn": set(), "mat": set(), "pmin": []})
+    for g, p in I["prods"].items():
+        pl = p["ps"].get("KDEMI_Plomberie")
+        if not pl or p["classe"] != "IfcPipeSegment" or g not in G:
+            continue
+        r = pl.get("Reseau", "?")
+        for d in p["dirs"]:
+            par[r]["L"] += LineString(d[0]).length
+        par[r]["dn"].add(str(pl.get("DN_mm", "")))
+        par[r]["mat"].add(pl.get("Materiau", ""))
+        if pl.get("Pente_min_pct") not in (None, "", 0):
+            par[r]["pmin"].append(float(pl["Pente_min_pct"]))
+    return par
+
+
 def legende_symboles(p, entrees, ech=50):
     """Légende des symboles dessinés (petits axes à l'échelle du plan)."""
     for fn, lib in entrees:
@@ -570,4 +654,252 @@ def A09(sc):
     p.enregistrer("plan_electricite_CFO_CFA")
 
 
-PLANCHES = {"A09": A09}
+def A10(sc):
+    I = ifc()
+    PL = elements_plom(sc)
+    p = Planche("A10", "Plomberie — AEP, EU, EV et condensats", "Plan sanitaire  ·  Échelle 1/50 et 1/25 (A3)  ·  Coupe à +1,00", px=290)
+    xl, yl = (-0.45, 7.05), (-0.85, 7.95)
+    ax = p.axes(6, 12, xl, yl, 50)
+    v, R = fond_plan(ax, sc, garder_tech=("Descente", "Coffrage", "Split", "Mini-pompe", "WC", "lave-mains", "Réservation R8"))
+    for x in PL:
+        if x["classe"] != "IfcPipeSegment" or not x["dirs"]:
+            continue
+        for d in x["dirs"]:
+            trace_tuyau(ax, d[0], x["reseau"])
+    for e in sc:
+        if est(e, "Descente EU/EV"):
+            lo, hi = bb(e)
+            cx, cy = (lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2
+            ax.add_patch(Rectangle((lo[0], lo[1]), hi[0] - lo[0], hi[1] - lo[1], fc="none", ec=OLIVE, lw=D.LW[2], zorder=280))
+            ax.plot([cx, cx], [lo[1], hi[1]], color=EV_C, lw=D.LW[4], zorder=281, solid_capstyle="butt")
+            label(ax, cx + 0.18, cy, "Ø 100\nhyp.", size=3.5, col=OLIVE, z=420)
+        if est(e, "Coffrage acoustique descente"):
+            g = D.contour_complet(e, v)
+            D.patch(ax, g, fc="none", ec=TAUPE, lw=D.LW[2], z=275, ls=(0, (2, 2)))
+            c = centre_xy(e)
+            tag(ax, c[0] + 0.22, c[1], "À relever\nsur site", size=3.5, ha="left")
+    for e in sc:
+        if est(e, "Split mural") and "intérieure" in e["nom"]:
+            D.patch(ax, D.contour_complet(e, v), fc="white", ec=OLIVE, lw=D.LW[1], z=290, ls=(0, (3, 1.5)))
+        if est(e, "Mini-pompe de relevage"):
+            c = centre_xy(e)
+            sym_tee(ax, c, col=COND)
+            k = "1" if "split 1" in e["nom"] else "2"
+            tag(ax, c[0] + 0.12, c[1], f"P{k}", size=3.4, col=COND)
+    for x in PL:
+        if x["classe"] in ("IfcValve", "IfcFlowMeter", "IfcPipeFitting", "IfcWasteTerminal"):
+            sym_organe_plom(ax, x, x["classe"], x["reseau"])
+    cof = next(e for e in sc if est(e, "Coffret de comptage AEP"))
+    D.patch(ax, D.contour_complet(cof, v), fc="white", ec=AEP, lw=D.LW[2], z=300, hatch="////")
+    for x in PL:
+        if x["classe"] != "IfcPipeSegment" or not x["dirs"]:
+            continue
+        r, dn = x["reseau"], x.get("dn", "")
+        if r in ("EU", "EV") and dn:
+            pts = x["dirs"][0][0]
+            mid = pts[len(pts) // 2]
+            txt = f"PVC Ø {int(dn) if float(dn) == int(float(dn)) else dn} · 2 %"
+            tag(ax, mid[0] + 0.08, mid[1], txt, size=3.3, col=RESEAU[r][0])
+            if r == "EV":
+                p0, p1 = pts[-2], pts[-1]
+                d = p1[:2] - p0[:2]; d /= max(np.linalg.norm(d), 1e-9)
+                fleche(ax, p0[:2] + d * 0.05, p0[:2] + d * 0.22, EV_C)
+        if r == "AEP" and dn in (12, 15, "12", "15"):
+            pts = x["dirs"][0][0]
+            mid = pts[len(pts) // 2]
+            tag(ax, mid[0], mid[1] + 0.06, f"MC {int(dn) + 4}", size=3.3, col=AEP)
+        if r == "Condensats":
+            pts = x["dirs"][0][0]
+            if pts[:, 2].min() > 2.0:
+                mid = pts[len(pts) // 2]
+                tag(ax, mid[0], mid[1], "PVC cristal\n10 × 14", size=3.2, col=COND)
+    r8 = nom(sc, "Réservation R8 Ø 0,04 - Passage condensats réunion -> rangement (cloison placo 4350621)")
+    c8 = centre_xy(r8)
+    D.patch(ax, D.contour_complet(r8, v), fc="none", ec=COND, lw=D.LW[1], z=320, ls=(0, (2, 2)))
+    tag(ax, c8[0] + 0.12, c8[1], "R8", size=3.8, col=COND, fontproperties=FP_MEDIUM)
+    sing = [(1, "Colonne / piquage AEP immeuble (position, DN, pression à relever)", np.array([0.20, 7.18]), (0.55, 7.75)),
+            (2, "Coffret de comptage (vanne, compteur, clapet EA, réducteur si P > 3 bar)", np.array([1.20, 7.34]), (1.55, 7.75)),
+            (3, "WC V4 conservé (4350629), alimentation flexible — non dupliqué", np.array([0.45, 7.05]), (0.15, 6.55)),
+            (4, "Lave-mains V4 conservé (plan 4350630, vasque 4350631), robinet temporisé", np.array([2.78, 7.02]), (3.15, 6.55)),
+            (5, "Siphon lave-mains + clapet aérateur Ø 40 sur antenne EU", np.array([2.72, 7.22]), (3.05, 7.55)),
+            (6, "Culotte / piquage Ø 40 sur descente EU/EV 1 (à relever)", np.array([0.35, 7.31]), (0.05, 7.55)),
+            (7, "Mini-pompe condensats split 1 (refoulement vers collecteur)", np.array([6.42, 5.25]), (6.75, 5.55)),
+            (8, "Mini-pompe condensats split 2", np.array([0.15, 4.18]), (-0.15, 4.45)),
+            (9, "R8 Ø 0,04 : passage condensats (cloison placo non porteuse)", c8, (0.55, 4.85)),
+            (10, "Siphon sec condensats + piquage sur descente EU/EV 2", np.array([0.26, 6.02]), (0.55, 6.35))]
+    for n_, _, c, b in sing:
+        bulle(ax, b[0], b[1], n_, fc=TERRE_CUITE, vers=tuple(c))
+    for (x_, y_, s) in ((4.55, 2.60, "SALLE DE LECTURE"), (1.25, 6.55, "WC"), (1.25, 5.85, "RANGEMENT"), (2.55, 5.55, "DÉG.")):
+        label(ax, x_, y_, s, size=4.4, col=TAUPE, z=405)
+    cote(ax, -0.09, 6.69, 7.80, "6,78", ext=7.59)
+    echelle_graphique(ax, 5.0, -0.65, 2, 1.0)
+    # zoom WC 1/25
+    p.T(162, 12, "ZOOM WC / RANGEMENT — 1/25", 6.0, TERRE_CUITE, fontproperties=FP_MEDIUM)
+    axz = p.axes(162, 22, (0.0, 3.0), (5.0, 7.5), 25)
+    fond_plan(axz, sc, z_coupe=1.0, voile=0.72, garder_tech=("Descente", "Coffrage", "WC", "lave-mains"))
+    for x in PL:
+        if x["classe"] != "IfcPipeSegment" or not x["dirs"]:
+            continue
+        pts = x["dirs"][0][0]
+        if pts[:, 0].max() < 3.05 and pts[:, 1].min() > 4.9:
+            for d in x["dirs"]:
+                trace_tuyau(axz, d[0], x["reseau"], z=220)
+    for x in PL:
+        if x["classe"] in ("IfcValve", "IfcFlowMeter", "IfcPipeFitting", "IfcWasteTerminal"):
+            c = centre_xy(x["e"])
+            if c[0] < 3.05 and c[1] > 4.9:
+                sym_organe_plom(axz, x, x["classe"], x["reseau"])
+    echelle_graphique(axz, 2.35, 5.05, 1, 1.0)
+    # élévation mur nord WC 1/25
+    p.T(162, 88, "ÉLÉVATION MUR NORD WC — 1/25 (V4 conservé)", 6.0, TERRE_CUITE, fontproperties=FP_MEDIUM)
+    axe = p.axes(162, 98, (0.0, 3.0), (-0.1, 3.4), 25)
+    vn = D.Vue((0, 1, 0), (1, 0, 0), (0, 0, 1), coupe=((0, -1, 0), -6.4003))
+    Rn = D.calculer(sc, vn, lambda e, r: r not in ("logements", "fenetre_logt", "sol_ext", "trottoir", "arbre", "voisin") and bb(e)[1][1] >= 6.3)
+    peindre(axe, Rn, trait_items=False)
+    pocher(axe, [r for r in Rn if r["role"] in ("structure", "cloison")], z=60)
+    for x in PL:
+        if x["classe"] != "IfcPipeSegment" or not x["dirs"]:
+            continue
+        for d in x["dirs"]:
+            pts = d[0]
+            if pts[:, 1].max() < 6.5 and pts[:, 0].max() < 3.1:
+                col, _ = RESEAU.get(x["reseau"], (ENCRE, ""))
+                axe.plot(pts[:, 0], pts[:, 2], color=col, lw=D.LW[2], ls=(0, (4, 1.5)) if pts[:, 2].min() > 2 else "-", zorder=200)
+    for zz, t in ((0.32, "+0,32 réservoir"), (0.52, "+0,52 siphon LM"), (1.10, "+1,10 AEP")):
+        niveau(axe, 2.85, zz, t, size=4.0)
+    echelle_graphique(axe, 2.35, -0.05, 1, 1.0)
+    # tableau réseaux
+    x0, y0 = 6, 118
+    p.T(x0, y0, "RÉSEAUX (IFC — KDEMI_Reseau / KDEMI_Plomberie)", 6.2, TERRE_CUITE, fontproperties=FP_MEDIUM)
+    lr = longueur_reseaux(I, sc)
+    rows = []
+    for s in I["reseaux"]:
+        lib = s.get("nom", "")
+        rkey = next((k for k in lr if k in lib or lib.startswith(k)), None)
+        L = lr.get(rkey or "", {}).get("L", 0)
+        info = lr.get(rkey or "", {})
+        dn = " / ".join(sorted({str(x) for x in info.get("dn", []) if x}))
+        mat = court(" / ".join(sorted({str(x) for x in info.get("mat", []) if x})), 42)
+        pente = f"{min(info['pmin']):.1f} %" if info.get("pmin") else "—"
+        rows.append([lib.split("(")[0].strip(), fr(L, 1) + " m", dn or "—", mat, pente, s.get("Statut", "—")])
+    yy = tableau(p, x0, y0 + 6, [("Réseau", 42, "left"), ("L tuyaux", 14, "right"), ("DN mm", 12, "left"), ("Matériau", 38, "left"),
+                                  ("Pente mini", 14, "left"), ("Statut", 22, "left")], rows, size=4.35, dy=3.15)
+    for s in I["raccords"]:
+        p.T(x0, yy + 2, f"Raccordement V5 : {court(s[0], 35)} → {court(s[1], 35)}", 4.3, TAUPE); yy += 3.0
+    p.intertitre("Symboles")
+    for rk, (_, lib) in RESEAU.items():
+        col = RESEAU[rk][0]
+        ls = (0, (3, 1.2)) if rk == "Condensats" else "-"
+        p.symbole("trait", lib, color=col, ls=ls, lw=D.LW[2])
+    p.symbole("trait", "Tronçon en plénum (z > 2,00) : tirets", color=TAUPE, ls=(0, (4, 1.5)))
+    legende_symboles(p, [
+        (lambda a, c: sym_vanne(a, c, (1, 0)), "Vanne / robinet d'arrêt"),
+        (lambda a, c: sym_compteur(a, c), "Compteur divisionnaire"),
+        (lambda a, c: sym_clapet(a, c, (1, 0)), "Clapet (EA, aérateur)"),
+        (lambda a, c: sym_tee(a, c), "Té / culotte / piquage"),
+        (lambda a, c: sym_siphon(a, c), "Siphon / siphon sec"),
+    ], ech=25)
+    p.intertitre("Points singuliers")
+    for n_, s, _, _ in sing:
+        p.pastille(str(n_), court(s, 72), TERRE_CUITE)
+    p.intertitre("Principes")
+    for s in ["Pas de chauffe-eau : un seul lave-mains, eau froide réseau (26-30 °C à Abidjan),",
+              "pas de circuit 20 A dédié ni de stockage d'eau chaude (légionelles).",
+              "WC et lave-mains V4 conservés, non dupliqués : raccordements V5 via",
+              "IfcRelConnectsElements « Raccordement V5 sur appareil V4 conservé ».",
+              "Branchements immeuble / descentes EU·EV : position et diamètres à relever.",
+              "Réducteur de pression posé seulement si P mesurée > 3 bar.",
+              "Condensats refoulés par mini-pompes vers la descente EU/EV 2 (siphon sec)."]:
+        p.ligne(s, 5.6, dy=3.2)
+    p.cartouche("1/50 et 1/25")
+    p.enregistrer("plan_plomberie_AEP_EU_EV_condensats")
+
+
+def _detail(p, x, y, titre, ech, sc, vue, ulim, vlim, garder=None, notes=(), z_niv=()):
+    garder = garder or (lambda e, r: r not in ("logements", "fenetre_logt", "sol_ext", "trottoir", "arbre", "voisin"))
+    ax = p.axes(x, y, ulim, vlim, ech)
+    R = D.calculer(sc, vue, garder)
+    peindre(ax, R, trait_items=False)
+    pocher(ax, [r for r in R if r["role"] in ("structure", "cloison")], z=55)
+    pocher(ax, [r for r in R if r["role"] not in ("structure", "cloison") and role(r["e"]) != "technique"], z=45)
+    for u, v, t in z_niv:
+        niveau(ax, ulim[1] - 0.08 * (ulim[1] - ulim[0]), v, t, size=3.8)
+    for pu, pv, txt, du, dv in notes:
+        ax.plot([pu, pu + du], [pv, pv + dv], color=ENCRE, lw=D.LW[1], zorder=400)
+        label(ax, pu + du * 1.05, pv + dv * 1.05, txt, size=3.6, z=410, ha="left" if du >= 0 else "right")
+    p.T(x, y - 4, titre, 5.8, ENCRE, fontproperties=FP_MEDIUM)
+    p.T(x + 2, y - 7.5, f"Échelle 1/{ech}", 4.8, TAUPE)
+    echelle_graphique(ax, ulim[0] + 0.05 * (ulim[1] - ulim[0]), vlim[0] + 0.04 * (vlim[1] - vlim[0]), 1, 1.0)
+    return ax, R
+
+
+def A11(sc):
+    I = ifc()
+    p = Planche("A11", "Détails techniques", "Coupe et élévations tirées de l'IFC  ·  Échelles 1/10 et 1/20 (A3)", px=290)
+    # D1 plénum
+    v1 = D.Vue((0, 1, 0), (1, 0, 0), (0, 0, 1), coupe=((0, -1, 0), -3.0003))
+    ax1, _ = _detail(p, 8, 18, "D1 — Faux-plafond acoustique et plénum", 10, sc, v1, (2.75, 3.95), (2.80, 3.58),
+                      lambda e, r: r in ("structure", "cloison", "plafond", "technique") or est(e, "Chemin de câbles", "Wi-Fi", "Suspente"),
+                      notes=[(3.20, 3.24, "Chemin C3 80×40", 0.0, 0.08), (3.75, 3.22, "AP Wi-Fi PoE", 0.0, 0.08),
+                             (3.55, 3.30, "Suspente M6 · 40 mm\n(non traversante)", 0.12, 0.0)],
+                      z_niv=[(0, 3.00, "+3,00 FP"), (0, 3.30, "+3,30 dalle")])
+    label(ax1, 3.35, 3.02, "FP acoustique\n40 mm", size=3.5, col=TAUPE)
+    # D5 seuil vitrine
+    v5 = D.Vue((1, 0, 0), (0, 1, 0), (0, 0, 1), coupe=((-1, 0, 0), -1.1503))
+    _detail(p, 8, 108, "D5 — Seuil de vitrine baie A", 10, sc, v5, (-0.55, 0.50), (0.15, 0.85),
+            lambda e, r: r not in ("logements", "voisin", "arbre") and (bb(e)[0][0] < 1.2 or est(e, "Seuil", "Podium", "Vitrine", "Châssis")),
+            notes=[(0.05, 0.48, "Tôle pliée acier noir 30/10", 0.15, 0.0), (0.35, 0.55, "Appui existant", 0.0, 0.08),
+                   (-0.35, 0.42, "Podium iroko", 0.0, -0.08), (0.25, 0.72, "Allège V4 : pas de fixation", 0.12, 0.0)])
+    # D2 coffrage descente 1
+    v2 = D.Vue((0, 0, -1), (1, 0, 0), (0, 1, 0), coupe=((0, 0, 1), 0.6003))
+    ax2, _ = _detail(p, 8, 198, "D2 — Coffrage acoustique descente EU/EV 1", 10, sc, v2, (-0.10, 0.75), (6.85, 7.55),
+                     lambda e, r: r in ("structure", "cloison", "technique") or est(e, "Coffrage", "Descente"),
+                     notes=[(0.35, 7.26, "Coffrage 0,30×0,30\n2×BA13 hydro 25 + laine 25", 0.0, 0.12),
+                            (0.24, 7.18, "Colonne AEP (hyp.)", 0.10, 0.0), (0.15, 7.38, "Trappe 0,20×0,20", -0.08, 0.0)])
+    tag(ax2, 0.55, 7.48, "À relever sur site", size=3.5)
+    # D3 placard technique
+    v3 = D.Vue((0, -1, 0), (-1, 0, 0), (0, 0, 1), coupe=((0, 1, 0), 5.555))
+    _detail(p, 135, 18, "D3 — Placard technique (vue sud)", 20, sc, v3, (0.36, 1.30), (-0.05, 3.40),
+            lambda e, r: r not in ("logements", "fenetre_logt") and bb(e)[1][0] < 1.35,
+            notes=[(0.55, 1.15, "Disjoncteur branchement", 0.0, 0.10), (0.95, 1.55, "Coffret clim", 0.0, 0.08),
+                   (1.05, 2.05, "Baie 9U + PC P6", 0.0, 0.08), (0.70, 2.85, "Chemin câbles → plénum", 0.10, 0.0)],
+            z_niv=[(0, 0.0, "±0,00"), (0, 3.00, "+3,00")])
+    # D4 fixations oculus
+    v4 = D.Vue((0, 1, 0), (1, 0, 0), (0, 0, 1), coupe=((0, -1, 0), -5.6103))
+    _detail(p, 203, 18, "D4 — Fixations non traversantes (oculus / canopée)", 10, sc, v4, (5.74, 6.55), (2.85, 3.55),
+            lambda e, r: r in ("structure", "technique") or est(e, "Platine", "Suspente", "canopée", "oculus"),
+            notes=[(6.05, 3.28, "Platine canopée\nancrage 50 mm", 0.0, 0.10), (6.20, 3.05, "Suspente bandeau oculus\n40 mm, aucune traversée", 0.0, -0.10),
+                   (6.35, 2.95, "Dalle 200 mm hyp.", 0.12, 0.0)])
+    # inset pied arbre
+    ax4 = p.axes(248, 72, (5.85, 6.45), (2.92, 3.08), 10)
+    for e in sc:
+        if est(e, "Platine de pied de l'arbre"):
+            lo, hi = bb(e)
+            if lo[0] > 5.8:
+                g = sbox(lo[0], lo[2], hi[0], hi[2])
+                D.patch(ax4, g, fc="white", ec=ENCRE, lw=D.LW[2], z=10)
+    label(ax4, 6.15, 3.02, "Pied arbre : 30 mm\ndallage 100 mm hyp.", size=3.4)
+    # D6 panneau passe-liaisons
+    v6 = D.Vue((1, 0, 0), (0, 1, 0), (0, 0, 1), coupe=((-1, 0, 0), -4.6003))
+    _detail(p, 203, 118, "D6 — Panneau passe-liaisons (baie arrière V4)", 10, sc, v6, (7.00, 7.81), (2.40, 3.55),
+            lambda e, r: r not in ("voisin",) and (bb(e)[0][0] > 4.3 or est(e, "Panneau passe", "Réservation R3", "Réservation R4", "Liaison")),
+            notes=[(7.44, 2.68, "Panneau acier 40 mm\n(y 7,415-7,455)", 0.0, 0.10), (7.52, 2.85, "R3 / R4 Ø 0,10\ndans le panneau", 0.10, 0.0),
+                   (7.35, 3.15, "Liaisons frigorifiques", 0.0, 0.08), (7.55, 2.45, "Ouverture V4 inchangée", 0.0, -0.08)])
+    p.intertitre("Liste des détails")
+    for t in ("D1 — Plénum acoustique, chemin C3, suspentes 40 mm", "D2 — Coffrage descente EU/EV 1 (50 mm, trappe)",
+              "D3 — Placard technique (AGCP, clim, 9U, TD)", "D4 — Fixations canopée / oculus / pied arbre (KDEMI_Fixation)",
+              "D5 — Seuil tôle acier baie A", "D6 — Panneau passe-liaisons imposte baie arrière"):
+        p.pastille(t[:2], t, TERRE_CUITE)
+    p.intertitre("Principes")
+    fast = [x for x in I["prods"].values() if x["ps"].get("KDEMI_Fixation")]
+    anc = sorted({int(x["ps"]["KDEMI_Fixation"]["Ancrage_mm"]) for x in fast})
+    for s in ["Aucun percement de poteau, voile ni dalle porteuse.",
+              f"Fixations : chevilles non traversantes, ancrage au plus 1/3 du support ({', '.join(map(str, anc))} mm dans l'IFC).",
+              "Valeurs lues sur KDEMI_Fixation (Traversant = False).",
+              "Réseaux : voir A09 (électricité), A10 (plomberie)."]:
+        p.ligne(s, 5.7, dy=3.3)
+    p.cartouche("1/10 et 1/20")
+    p.enregistrer("details_techniques")
+
+
+PLANCHES = {"A09": A09, "A10": A10, "A11": A11}
