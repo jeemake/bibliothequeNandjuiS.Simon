@@ -12,9 +12,9 @@ from reportlab.lib.enums import TA_LEFT, TA_RIGHT
 from reportlab.lib.colors import HexColor
 from pypdf import PdfReader, PdfWriter, Transformation, PageObject
 FD = "/workspace/decimo_final/polices/"
-FONTS = {"serif": "dm-serif-display-latin-400-normal", "jost3": "jost-latin-300-normal", "jost4": "jost-latin-400-normal", "jost5": "jost-latin-500-normal", "manrope5": "manrope-latin-500-normal"}
+FONTS = {"serif": "archivo-latin-600-normal", "jost3": "archivo-latin-400-normal", "jost4": "archivo-latin-400-normal", "jost5": "archivo-latin-500-normal", "manrope5": "manrope-latin-500-normal"}
 for k, f in FONTS.items(): pdfmetrics.registerFont(TTFont(k, FD + f + ".ttf"))
-PPT_FONT = {"serif": "DM Serif Display", "jost3": "Jost", "jost4": "Jost", "jost5": "Jost", "manrope5": "Manrope"}
+PPT_FONT = {"serif": "Archivo", "jost3": "Archivo", "jost4": "Archivo", "jost5": "Archivo", "manrope5": "Manrope"}
 
 def pstyle(st):
     return ParagraphStyle("s", fontName=st["font"], fontSize=st["size"], leading=st["lead"], textColor=HexColor(st["color"]),
@@ -56,7 +56,7 @@ def build_pdf(out):
                 blank.merge_transformed_page(src, Transformation().scale(s).translate((tw - sw * s) / 2, (th - sh * s) / 2)); wr.add_page(blank)
             else:
                 wr.add_page(src)
-    wr.add_metadata({"/Title": "Bibliothèque Decimo · Esquisse V5 · dossier de présentation", "/Author": "K&Démi"})
+    wr.add_metadata({"/Title": "Bibliothèque Decimo · Esquisse V5 · dossier de présentation · indice B", "/Author": "K&Démi"})
     wr.compress_identical_objects(); wr.write(out)
 
 def build_pptx(out):
@@ -92,10 +92,10 @@ def build_pptx(out):
                     para = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
                     para.alignment = PP_ALIGN.RIGHT if st.get("align") == "right" else PP_ALIGN.LEFT
                     para.line_spacing = Pt(st["lead"])
-                    r = para.add_run(); r.text = line; r.font.name = PPT_FONT[st["font"]]; r.font.size = Pt(st["size"]); r.font.color.rgb = rgb(st["color"])
+                    r = para.add_run(); r.text = line; r.font.name = PPT_FONT[st["font"]]; r.font.size = Pt(st["size"]); r.font.color.rgb = rgb(st["color"]); r.font.bold = True if st["font"] == "serif" else None
     pr.save(out)
 
 if __name__ == "__main__":
-    build_pdf(L.OUT + "/Decimo_ESQ_V5_Dossier_A3.pdf")
-    if "--pptx" in sys.argv: build_pptx(L.OUT + "/Decimo_ESQ_V5_Dossier_A3.pptx")
+    build_pdf(L.OUT + "/Decimo_ESQ_V5_Dossier_A3_v2.pdf")
+    if "--pptx" in sys.argv: build_pptx(L.OUT + "/Decimo_ESQ_V5_Dossier_A3_v2.pptx")
     print("pages", len(P))

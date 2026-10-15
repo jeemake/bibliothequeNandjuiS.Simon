@@ -10,9 +10,10 @@ PX = 255.0           # début du panneau (identique aux planches A01-A11)
 TX = 263.0; TW = 147.0
 X0, Y0, CW, CH = 14.0, 14.0, 227.0, 269.0
 G = 5.0
-ENCRE="#2B2420"; TAUPE="#7D7168"; TERRE="#B4583E"; IROKO="#9A6B43"; SABLE="#E6D6BF"; SABLE_CL="#F4EDE2"; CHAUX="#FBF8F3"; OLIVE="#5F7A4B"; INDIGO="#2F3A56"
-LOGO = B + "/KDemi_v3_A_arche_lockup_mono.png"; LOGO_INV = B + "/KDemi_v3_A_arche_lockup_inverse.png"; LOGO_COL = B + "/KDemi_v3_A_arche_lockup.png"
-R = B + "/rendus/"; V = B + "/pr3/v5/vues_rendu/"; DES = B + "/dessins/"
+ENCRE="#4A4A4A"; TAUPE="#8C8C8C"; TERRE="#B4583E"; IROKO="#9A6B43"; SABLE="#E6D6BF"; SABLE_CL="#FFFFFF"; CHAUX="#FFFFFF"; OLIVE="#5F7A4B"; INDIGO="#2F3A56"; FILET="#C8C8C8"; GRIS_CL="#F4F4F4"
+# charte v2 (15/10/2026) : papier blanc, texte gris, Archivo seule famille, terre cuite en accent
+LOGO = B + "/KDemi_v3_A_arche_lockup_mono.png"; LOGO_INV = B + "/KDemi_v3_A_arche_lockup_inverse_gris.png"; LOGO_COL = B + "/KDemi_v3_A_arche_lockup.png"
+R = B + "/rendus/"; V = B + "/repo/v5/vues_rendu/"; DES = B + "/repo/v5/dessins/"
 TECH = json.load(open(OUT + "/tech.json")) if os.path.exists(OUT + "/tech.json") else {}
 
 def crop(src, w, h, name, focus=(0.5, 0.5), dpi=220):
@@ -28,9 +29,9 @@ def crop(src, w, h, name, focus=(0.5, 0.5), dpi=220):
 
 # éléments : ("rect",x,y,w,h,fill) ("img",path,x,y,w,h) ("text",x,y,w,txt,style) ("line",x1,y1,x2,y2,color,pt) ("pdf",path,png)
 ST = {
- "h_cover": dict(font="serif", size=50, color=CHAUX, lead=52),
- "title": dict(font="serif", size=25, color=ENCRE, lead=28),
- "sub": dict(font="jost4", size=11, color=TERRE, lead=14),
+ "h_cover": dict(font="serif", size=44, color=ENCRE, lead=46),
+ "title": dict(font="serif", size=23, color=ENCRE, lead=26),
+ "sub": dict(font="jost5", size=10.5, color=ENCRE, lead=14),
  "meta": dict(font="jost4", size=7.2, color=TAUPE, lead=9),
  "head": dict(font="jost5", size=7.4, color=TERRE, lead=10, caps=True),
  "body": dict(font="jost4", size=8.4, color=ENCRE, lead=12),
@@ -39,21 +40,21 @@ ST = {
  "cap": dict(font="jost4", size=6.8, color=TAUPE, lead=8.6),
  "lab": dict(font="jost5", size=6.2, color=TAUPE, lead=8, caps=True),
  "val": dict(font="jost4", size=6.8, color=ENCRE, lead=8),
- "kpi": dict(font="serif", size=26, color=TERRE, lead=28),
- "col_h": dict(font="serif", size=14, color=ENCRE, lead=17),
+ "kpi": dict(font="serif", size=24, color=ENCRE, lead=27),
+ "col_h": dict(font="serif", size=13, color=ENCRE, lead=16),
  "foot": dict(font="manrope5", size=6.5, color=ENCRE, lead=8),
- "foot_r": dict(font="jost4", size=6.5, color=TERRE, lead=8, align="right"),
+ "foot_r": dict(font="jost4", size=6.5, color=TAUPE, lead=8, align="right"),
 }
 def S(name, **kw):
     d = dict(ST[name]); d.update(kw); return d
 
 def panel(els, code, title, sub, meta, sections, planche, echelle="sans échelle", dark=False):
-    els.append(("rect", PX, 0, W - PX, H, ENCRE if dark else SABLE_CL))
+    els.append(("line", PX, 8, PX, H - 8, FILET, 0.4))
     els.append(("img", LOGO_INV if dark else LOGO, TX, 12, 46, 46 * 814 / 2400))
     els.append(("text", TX, 40, TW, title, S("title")))
     els.append(("text", TX, 52.5, TW, sub, S("sub")))
     if meta: els.append(("text", TX, 59.5, TW, meta, S("meta")))
-    els.append(("line", TX, 64, TX + TW, 64, TERRE, 0.6))
+    els.append(("line", TX, 64, TX + 18, 64, TERRE, 0.9)); els.append(("line", TX + 18, 64, TX + TW, 64, FILET, 0.4))
     y = 70.0
     for head, body, kind in sections:
         els.append(("text", TX, y, TW, head, S("head"))); y += 5.2
@@ -71,9 +72,9 @@ def panel(els, code, title, sub, meta, sections, planche, echelle="sans échelle
             hgt = els_text_height(body, S("body"), TW)
             els.append(("text", TX, y, TW, body, S("body"))); y += hgt + 4.5
     # cartouche
-    els.append(("line", TX, 246, TX + TW, 246, TAUPE, 0.3))
+    els.append(("line", TX, 246, TX + TW, 246, FILET, 0.3))
     rows = [("Projet", "Bibliothèque Decimo · RDC sous logements, Deux Plateaux, Abidjan"), ("Phase", "ESQ V5 · aménagement sur existant V4"),
-            ("Planche", planche), ("Échelle", echelle + " · format A3 paysage"), ("Maquette", "v5/DECIMO_ESQ_V5.ifc (IFC4)"), ("Date", "15 octobre 2026 · indice A")]
+            ("Planche", planche), ("Échelle", echelle + " · format A3 paysage"), ("Maquette", "v5/DECIMO_ESQ_V5.ifc (IFC4)"), ("Date", "15 octobre 2026 · indice B")]
     yy = 249.5
     for a, b in rows:
         els.append(("text", TX, yy, 22, a, S("lab"))); els.append(("text", TX + 22, yy, TW - 22, b, S("val"))); yy += 4.6
@@ -83,21 +84,21 @@ def panel(els, code, title, sub, meta, sections, planche, echelle="sans échelle
 _measure = None
 
 # ---------------- planches techniques (Ahoua, T01-T05) : planche réelle si présente, sinon réserve propre
-TDIR = B + "/technique/"
+TDIR = B + "/repo/v5/technique/"
 TPAGES = [
- ("T01", "Courants forts", "A02_plan_faux_plafond_reseaux",
+ ("T01", "Électricité, courants forts", "A02_plan_faux_plafond_reseaux",
   ["Prises 2P+T 16 A : banque d'accueil, tables de lecture, salle de réunion, ménage", "Circuits dédiés : 2 splits 9 000 BTU/h, mini-pompes de relevage des condensats", "Cheminements sous faux-plafond, descentes en goulotte iroko", "Tableau divisionnaire raccordé à l'arrivée de l'immeuble"],
   [("Tableau divisionnaire", "1 · 1,00 m dégagé"), ("Splits muraux 9 000 BTU/h", "2"), ("TGBT, groupe électrogène", "aucun, côté immeuble"), ("Distance tableau / WC", "5,92 m")]),
- ("T02", "Courants faibles et éclairage", "A02_plan_faux_plafond_reseaux",
+ ("T02", "Courants faibles, éclairage et BAES", "A02_plan_faux_plafond_reseaux",
   ["RJ45 cat. 6 : accueil, tables de travail, salle de réunion, point d'accès Wi-Fi en plafond", "Baie de brassage murale dans le placard technique", "Éclairage 2700 K : downlights, suspensions terre cuite, anneau LED de l'oculus, réglette de vitrine", "Commandes par zone et détection au WC"],
   [("Luminaires IfcLightFixture", "27"), ("Température de couleur", "2700 K"), ("Placard technique net", "0,60 × 0,40 m"), ("Plénum sous dalle", "0,26 m")]),
- ("T03", "Plomberie AEP, EU, EV", "A01_plan_RDC",
+ ("T03", "AEP, EU, EV", "A01_plan_RDC",
   ["Alimentation eau froide depuis l'attente de l'immeuble, vanne d'arrêt et compteur divisionnaire", "WC 4350629 et lave-mains 4350630/4350631 de la V4 conservés", "EU/EV vers les descentes existantes en coffrage 0,30 × 0,30", "Condensats des splits relevés par mini-pompes vers EU"],
   [("Appareils sanitaires", "WC + lave-mains (V4)"), ("Coffrages EU/EV", "2 · à relever sur site"), ("Réservations Ø 0,10", "5 · hors structure"), ("Pénétration dans la structure", "0")]),
  ("T04", "Détails techniques", "A03_coupe_AA",
   ["Fixation non traversante de l'arbre à livres et de l'oculus sous dalle", "Faux-plafond acoustique +3,00 et trappes de visite des splits", "Châssis acier noir dans les baies cintrées V4, inserts claustra Adinkra", "Passage des liaisons frigorifiques par la baie arrière existante"],
   [("Faux-plafond", "+3,00 / +3,04"), ("Sous-face de dalle (hypothèse)", "+3,30"), ("Liaisons frigorifiques", "2 faisceaux"), ("Intersections structure", "0")]),
- ("T05", "Unifilaire et bilan de puissance", "A02_plan_faux_plafond_reseaux",
+ ("T05", "Schéma unifilaire et bilan de puissance", "A02_plan_faux_plafond_reseaux",
   ["Schéma unifilaire du tableau divisionnaire : interrupteurs différentiels 30 mA, départs par usage", "Bilan de puissance : éclairage, prises, climatisation, informatique", "Puissance à demander au syndic et section du câble d'alimentation", "Note technique et contrôle V4/V5 à 0 écart"],
   [("Départs clim dédiés", "2"), ("Protection des personnes", "DDR 30 mA"), ("Puissance souscrite", "à confirmer"), ("Écart V4/V5", "0")]),
 ]
@@ -150,20 +151,20 @@ def pages():
     P = []
     # ---------------- 01 couverture
     e = []
-    e.append(("rect", 0, 0, W, H, ENCRE))
-    e.append(("img", crop(R + "04_arbre.png", PX, H, "cover", focus=(0.52, 0.5)), 0, 0, PX, H))
-    e.append(("rect", PX, 0, W - PX, H, ENCRE))
-    e.append(("img", LOGO_INV, TX, 14, 52, 52 * 814 / 2400))
+    e.append(("img", crop(R + "04_arbre.png", CW + X0 - 4, H - 2 * Y0, "cover", focus=(0.52, 0.5)), X0, Y0, CW, H - 2 * Y0))
+    e.append(("line", PX, 8, PX, H - 8, FILET, 0.4))
+    e.append(("img", LOGO, TX, 14, 52, 52 * 814 / 2400))
     e.append(("text", TX, 104, TW, "Bibliothèque\nDecimo", S("h_cover")))
-    e.append(("line", TX, 146, TX + 30, 146, TERRE, 1.2))
-    e.append(("text", TX, 152, TW, "Esquisse V5 · aménagement intérieur et devanture", S("sub", size=12.5, lead=16, color="#D9876C")))
-    e.append(("text", TX, 162, TW, "Local en rez-de-chaussée sous logements\nDeux Plateaux, Abidjan", S("body_l", color=SABLE, size=10.5, lead=14.5)))
-    e.append(("text", TX, 246, TW, "DOSSIER DE PRÉSENTATION", S("lab", color="#D9876C", size=6.8)))
-    e.append(("text", TX, 251, TW, "D.A · plans · coupe · élévations · vues 3D · axonométries · électricité · plomberie · détails techniques", S("small", color=SABLE)))
-    e.append(("text", TX, 266, TW, "15 octobre 2026 · indice A", S("small", color=SABLE)))
-    e.append(("text", TX, 289, 60, "K&Démi · architecture · intérieur", S("foot", color=CHAUX)))
+    e.append(("line", TX, 144, TX + 18, 144, TERRE, 1.0))
+    e.append(("text", TX, 150, TW, "Esquisse V5 · aménagement intérieur et devanture", S("sub", size=11.5, lead=15)))
+    e.append(("text", TX, 160, TW, "Local en rez-de-chaussée sous logements\nDeux Plateaux, Abidjan", S("body_l", color=TAUPE, size=10, lead=14)))
+    e.append(("line", TX, 242, TX + TW, 242, FILET, 0.3))
+    e.append(("text", TX, 246, TW, "DOSSIER DE PRÉSENTATION", S("lab", size=6.8)))
+    e.append(("text", TX, 251, TW, "D.A · plans · coupe · élévations · vues 3D · axonométries · électricité · plomberie · détails techniques", S("small")))
+    e.append(("text", TX, 263, TW, "15 octobre 2026 · indice B", S("small")))
+    e.append(("text", TX, 274, TW, "En couverture : l'arbre à livres sous l'oculus indigo, rendu tiré de la vue 04 de la maquette IFC V5", S("cap")))
+    e.append(("text", TX, 289, 60, "K&Démi · architecture · intérieur", S("foot")))
     e.append(("text", TX + TW - 60, 289, 60, "01", S("foot_r")))
-    e.append(("text", TX, 276, TW, "En couverture : l'arbre à livres sous l'oculus indigo, rendu tiré de la vue 04 de la maquette IFC V5", S("cap", color=TAUPE)))
     P.append(("page", e, "Couverture"))
     # ---------------- 02 le projet
     e = []
@@ -175,14 +176,14 @@ def pages():
             ("Le parti", "Terre, ombre et bois. La claustra en terre cuite filtre le soleil, l'iroko habille tout ce qui se touche et la chaux tout ce qui se voit. L'arbre à livres et son oculus indigo sont le seul objet fort de la salle.")]
     for i, (h, t) in enumerate(cols):
         x = X0 + i * (cw3 + G)
-        e.append(("line", x, 176, x + cw3, 176, TERRE, 0.6))
+        e.append(("line", x, 176, x + cw3, 176, FILET, 0.4))
         e.append(("text", x, 180, cw3, h, S("col_h")))
         e.append(("text", x, 188, cw3, t, S("body_l", size=9, lead=13)))
     cw4 = (CW - 3 * G) / 4
     kp = [("43,55 m²", "surface intérieure, 7 espaces"), ("15,74 m²", "terrasse couverte sous pergola"), ("3,00 m", "hauteur sous faux-plafond"), ("141 / 141", "éléments existants V4 conservés à l'identique")]
     for i, (k, l) in enumerate(kp):
         x = X0 + i * (cw4 + G)
-        e.append(("line", x, 244, x + cw4, 244, TAUPE, 0.3))
+        e.append(("line", x, 244, x + cw4, 244, FILET, 0.3))
         e.append(("text", x, 248, cw4, k, S("kpi")))
         e.append(("text", x, 260, cw4, l, S("cap", size=7.4, lead=9.4)))
     som = [("Couverture", "01"), ("Le projet", "02"), ("Identité K&Démi", "03"), ("D.A de la bibliothèque", "04"),
@@ -198,36 +199,37 @@ def pages():
     P.append(("page", e, "Le projet"))
     # ---------------- 03 identité
     e = []
-    e.append(("rect", X0, Y0, CW, 112, SABLE_CL))
+    for a_ in [(X0, Y0, X0 + CW, Y0), (X0, Y0 + 112, X0 + CW, Y0 + 112)]: e.append(("line",) + a_ + (FILET, 0.3))
     lw = 118; e.append(("img", LOGO_COL, X0 + (CW - lw) / 2, Y0 + (112 - lw * 814 / 2400) / 2, lw, lw * 814 / 2400))
-    caption(e, X0, 130, CW, "Version principale : encre sur blanc chaux, « & » en terre cuite. Zone de protection : la moitié de la hauteur du carré tout autour.")
-    sw = [("Encre", ENCRE, "texte, traits"), ("Terre cuite", TERRE, "signature"), ("Iroko", IROKO, "bois, repères"), ("Sable", SABLE, "aplats"),
-          ("Sable clair", SABLE_CL, "fonds"), ("Blanc chaux", CHAUX, "page"), ("Taupe", TAUPE, "texte 2"), ("Olive", OLIVE, "végétal, rare")]
+    caption(e, X0, 130, CW, "Version principale sur papier blanc, « & » en terre cuite. Zone de protection : la moitié de la hauteur du carré tout autour.")
+    sw = [("Gris texte", ENCRE, "titres, texte"), ("Gris clair", TAUPE, "texte 2, cotes"), ("Filet", FILET, "filets, grille"), ("Gris aplat", GRIS_CL, "tableaux"),
+          ("Papier", "#FFFFFF", "fond unique"), ("Terre cuite", TERRE, "accent, rare"), ("Indigo", INDIGO, "accent, très rare"), ("Iroko", IROKO, "matière bois")]
     sww = (CW - 7 * G) / 8
     for i, (n, c, u) in enumerate(sw):
         x = X0 + i * (sww + G)
         e.append(("rect", x, 142, sww, 30, c))
-        if c in (CHAUX, SABLE_CL):
-            for a in [(x,142,x+sww,142),(x,172,x+sww,172),(x,142,x,172),(x+sww,142,x+sww,172)]: e.append(("line",)+a+(TAUPE,0.3))
+        if c in ("#FFFFFF", GRIS_CL):
+            for a_ in [(x,142,x+sww,142),(x,172,x+sww,172),(x,142,x,172),(x+sww,142,x+sww,172)]: e.append(("line",)+a_+(FILET,0.3))
         e.append(("text", x, 175, sww, n, S("small", font="jost5")))
         e.append(("text", x, 179.2, sww, f"{c} · {u}", S("cap", size=6.2, lead=7.6)))
     hw = (CW - G) / 2
-    e.append(("line", X0, 194, X0 + hw, 194, TERRE, 0.6))
-    e.append(("text", X0, 198, hw, "DM Serif Display", S("title", size=24)))
-    e.append(("text", X0, 210, hw, "Titres, chiffres clés, 18 à 36 pt", S("cap")))
-    e.append(("text", X0, 222, hw, "Jost", S("title", font="jost4", size=22)))
-    e.append(("text", X0, 233, hw, "Texte 8 à 10 pt, légendes 7 pt, capitales espacées", S("cap")))
+    e.append(("line", X0, 194, X0 + hw, 194, FILET, 0.4))
+    e.append(("text", X0, 198, hw, "Archivo SemiBold", S("title", size=24)))
+    e.append(("text", X0, 210, hw, "Titres et chiffres clés, 18 à 36 pt, approche serrée", S("cap")))
+    e.append(("text", X0, 222, hw, "Archivo Regular", S("title", font="jost4", size=22)))
+    e.append(("text", X0, 233, hw, "Texte 8 à 10 pt, légendes 7 pt, capitales en Archivo Medium", S("cap")))
     e.append(("text", X0, 246, hw, "Manrope", S("title", font="manrope5", size=22)))
     e.append(("text", X0, 257, hw, "Réservée au nom K&Démi dans le logo", S("cap")))
     x2 = X0 + hw + G
-    e.append(("rect", x2, 194, hw, 42, ENCRE)); e.append(("img", LOGO_INV, x2 + (hw - 60) / 2, 194 + (42 - 60 * 814 / 2400) / 2, 60, 60 * 814 / 2400))
-    e.append(("rect", x2, 241, hw, 42, SABLE)); e.append(("img", LOGO, x2 + (hw - 60) / 2, 241 + (42 - 60 * 814 / 2400) / 2, 60, 60 * 814 / 2400))
-    panel(e, "03", "Identité K&Démi", "L'arche dans le carré", "Logo v3 A choisi le 14 octobre 2026",
+    e.append(("rect", x2, 194, hw, 42, "#3A3A3A")); e.append(("img", LOGO_INV, x2 + (hw - 60) / 2, 194 + (42 - 60 * 814 / 2400) / 2, 60, 60 * 814 / 2400))
+    for a_ in [(x2,241,x2+hw,241),(x2,283,x2+hw,283),(x2,241,x2,283),(x2+hw,241,x2+hw,283)]: e.append(("line",)+a_+(FILET,0.3))
+    e.append(("img", LOGO, x2 + (hw - 60) / 2, 241 + (42 - 60 * 814 / 2400) / 2, 60, 60 * 814 / 2400))
+    panel(e, "03", "Identité K&Démi", "L'arche dans le carré", "Logo v3 A, charte v2 du 15 octobre 2026",
           [("Le logo", "Une arche découpée dans un carré, lue comme une porte. Le nom est composé en Manrope, l'esperluette en terre cuite. C'est le seuil de la devanture Decimo ramené à un signe.", "p"),
            ("Règles d'usage", ["Le nom est toujours posé à côté du symbole. Le symbole seul est réservé à l'icône d'application et au favicon.",
                                "30 mm minimum en impression, 120 px à l'écran.",
-                               "Version mono sur fond clair, inversée sur fond sombre. Pas de déformation, d'ombre ni de dégradé."], "list"),
-           ("La page", "Toutes les pages du dossier partagent la même grille et le même panneau de droite que les planches de dessin : 12 colonnes, marges de 14 mm, gouttières de 5 mm.", "p")],
+                               "Version mono sur papier blanc, inversée sur fond sombre. Pas de déformation, d'ombre ni de dégradé."], "list"),
+           ("La page", "Papier blanc, texte gris, une seule famille, Archivo. Toutes les pages partagent la grille et le panneau de droite des planches de dessin : 12 colonnes, marges de 14 mm, gouttières de 5 mm.", "p")],
           "03 · Identité K&Démi")
     P.append(("page", e, "Identité"))
     # ---------------- 04 D.A bibliothèque
@@ -249,7 +251,7 @@ def pages():
             ("Végétal", "Ficus lyrata, strelitzia, fougères et dracaena en jardinières sur la terrasse. Le vert reste rare à l'intérieur pour laisser la terre et le bois parler.")]
     for i, (h, t) in enumerate(cols):
         x = X0 + i * (cw4 + G)
-        e.append(("line", x, 216, x + cw4, 216, TERRE, 0.6))
+        e.append(("line", x, 216, x + cw4, 216, FILET, 0.4))
         e.append(("text", x, 220, cw4, h, S("col_h", size=12.5)))
         e.append(("text", x, 227.5, cw4, t, S("small", size=7.8, lead=10.8)))
     panel(e, "04", "D.A de la bibliothèque", "Terre, ombre et bois", "Direction artistique d'Affoué, visée le 14 octobre 2026",
@@ -327,19 +329,19 @@ def pages():
         ("Placard technique 0,60 × 0,40, porte pleine", "", "IfcSpace 05 et IfcDoor", "A01, A02", ""),
         ("Descentes EU/EV de l'immeuble en coffrage 0,30 × 0,30", "", "Coffrages « à relever sur site »", "A02", ""),
         ("Existant V4 : murs, poteau, ouvertures, emprise 6,78 × 7,68", "", "141 / 141 identiques, 0 pénétration", "toutes", "toutes"),
-        ("Lots techniques : électricité, CFA, AEP, EU, EV, détails", "", "branche lots techniques d'Ahoua, en cours", "T01 à T05", ""),
+        ("Lots techniques : électricité, CFA, AEP, EU, EV, détails", "", "DECIMO_ESQ_V5_tech.ifc : 141/141 V4, 231/231 V5, 0 pénétration", "T01 à T05", ""),
     ]
     y = Y0
     x = X0
     for n, wdt in cols:
         e.append(("text", x, y, wdt - 2, n, S("lab", color=TERRE, size=6.6))); x += wdt + 2.5
-    y += 5; e.append(("line", X0, y, X0 + CW, y, TERRE, 0.6)); y += 2.2
+    y += 5; e.append(("line", X0, y, X0 + CW, y, ENCRE, 0.4)); y += 2.2
     for r in rows:
         x = X0; hmax = 0
         for (n, wdt), v in zip(cols, r):
             hmax = max(hmax, els_text_height(v or "·", S("body"), wdt - 2))
             e.append(("text", x, y, wdt - 2, v or "·", S("body", color=ENCRE if v else TAUPE))); x += wdt + 2.5
-        y += hmax + 1.6; e.append(("line", X0, y, X0 + CW, y, TAUPE, 0.25)); y += 2.0
+        y += hmax + 1.6; e.append(("line", X0, y, X0 + CW, y, FILET, 0.25)); y += 2.0
     y += 5
     e.append(("text", X0, y, CW, "Points ouverts, à lever en APS", S("col_h"))); y += 8
     pts = TECH.get("points") or [
@@ -349,7 +351,7 @@ def pages():
         "MOA : maintien des claustras V4 devant la vitrine de la baie A, fabrication des inserts Adinkra avec l'artisan.",
         "APS : reprise des rails et suspensions V4 qui tombent dans le plénum, condensats relevés par mini-pompes faute de pente gravitaire.",
         "Accessibilité PMR du WC et réaction au feu des éléments en bois à vérifier.",
-        "Planches T01 à T05 d'Ahoua (courants forts, courants faibles et éclairage, AEP/EU/EV, détails, unifilaire et bilan) à insérer pages 16 à 20.",
+        "Lots techniques (note d'Ahoua) : arrivée électrique de l'immeuble, position réelle des descentes EU/EV et de la colonne AEP, ventilation du WC aveugle, fourreau R6 dans la cloison placo V4 à valider ou remplacer par une goulotte, abonnement 6 kVA à confirmer.",
         "Rendu R1 : jardinières de la terrasse rendues en banquettes, à reprendre pour coller à la maquette.",
     ]
     hw = (CW - G) / 2
@@ -365,10 +367,10 @@ def pages():
     cw4 = (CW - 3 * G) / 4
     for i, (k, l) in enumerate(TECH.get("kpis") or [("0 erreur", "validation IFC4, natif et variante Revit"), ("141 / 141", "produits V4 identiques en V5"), ("0", "pénétration d'un ajout dans la structure"), ("8", "espaces IfcSpace nommés et métrés")]):
         x = X0 + i * (cw4 + G)
-        e.append(("line", x, 250, x + cw4, 250, TAUPE, 0.3)); e.append(("text", x, 254, cw4, k, S("kpi"))); e.append(("text", x, 266, cw4, l, S("cap", size=7.4, lead=9.4)))
+        e.append(("line", x, 250, x + cw4, 250, FILET, 0.3)); e.append(("text", x, 254, cw4, k, S("kpi"))); e.append(("text", x, 266, cw4, l, S("cap", size=7.4, lead=9.4)))
     panel(e, f"{16+len(TPAGES):02d}", "Cohérence", "D.A, maquette, plans et technique", "Contrôle croisé du 15 octobre 2026",
           [("Validations", TECH.get("validations", "IFC4 natif et variante maillée pour Revit : 0 erreur au validateur ifcopenshell 0.9.0, schéma et règles EXPRESS. Contre-vérification indépendante sur main : les 141 produits V4 sont retrouvés par GlobalId, placements et géométries identiques (écart 0), emprise 6,78 × 7,68 m, WC 4350629 et lave-mains 4350630/4350631 conservés."), "p"),
-           ("Livrables", TECH.get("livrables", "Maquette v5/DECIMO_ESQ_V5.ifc et sa variante maillée pour Revit, planches A01 à A08 en PDF, PNG et SVG, vues de rendu avec leurs caméras, rapports de vérification. Tout est sur la branche main du dépôt jeemake/bibliothequeNandjuiS.Simon."), "p"),
+           ("Livrables", TECH.get("livrables", "Maquettes v5/DECIMO_ESQ_V5.ifc, DECIMO_ESQ_V5_tech.ifc et variante maillée pour Revit, planches A01 à A08 et T01 à T05 en PDF, PNG et SVG, note technique, vues de rendu avec leurs caméras, rapports de vérification. Tout est sur la branche main du dépôt jeemake/bibliothequeNandjuiS.Simon."), "p"),
            ("Lecture", "Les cotes et surfaces sont indicatives au stade de l'esquisse. L'existant V4 reste à relever sur site avant l'APS.", "p")],
           f"{16+len(TPAGES):02d} · Cohérence et points ouverts")
     P.append(("page", e, "Cohérence"))

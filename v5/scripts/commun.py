@@ -43,12 +43,12 @@ Z_LIAISONS = 3.15
 Z_CABLES = 3.24
 
 # --- palette (charte K&Démi + accent indigo) -------------------------------------------
-ENCRE = "#2B2420"
-TAUPE = "#7D7168"
+ENCRE = "#4A4A4A"
+TAUPE = "#8C8C8C"
 TERRE_CUITE = "#B4583E"
 IROKO = "#9A6B43"
-SABLE = "#E6D6BF"
-SABLE_CLAIR = "#F4EDE2"
-BLANC_CHAUX = "#FBF8F3"
+SABLE = "#E8E8E8"
+SABLE_CLAIR = "#F4F4F4"
+BLANC_CHAUX = "#FFFFFF"
 INDIGO = "#2E3C6E"
-POCHE = "#111111"
+POCHE = "#2E2E2E"

@@ -52,12 +52,12 @@ class Planche:
         self.maquette, self.dossier = maquette, dossier
         self.sha = SHA if maquette == V5_IFC else hashlib.sha256(open(maquette, "rb").read()).hexdigest()[:10]
         self.fig = plt.figure(figsize=(W * MM, H * MM), facecolor="white")
-        self.fig.add_artist(Rectangle((px / W, 0), (W - px) / W, 1, transform=self.fig.transFigure,
-                                      fc=SABLE_CLAIR, ec="none", zorder=-5))
+        # charte v2 : papier blanc, panneau séparé par un filet fin (pas d'aplat de fond)
+        self.fig.add_artist(Line2D([px / W] * 2, [8 / H, 1 - 8 / H], color=TAUPE, lw=0.35))
         x = px + 8
         draw_lockup(self.fig, x, 9, 46, fond="clair")
         self.T(x, 30, "Bibliothèque Decimo", 19, ENCRE, fontproperties=FP_TITRE)
-        self.T(x, 41, titre, 9.5, TERRE_CUITE)
+        self.T(x, 41, titre, 9.5, ENCRE, fontproperties=FP_MEDIUM)
         self.T(x, 47.5, ligne, 6.3, TAUPE)
         self.filet(52)
         self.y = 58
@@ -66,7 +66,7 @@ class Planche:
         kw.setdefault("va", "top")
         return self.fig.text(x / W, 1 - y / H, s, fontsize=size, color=color, **kw)
 
-    def filet(self, y, color=TERRE_CUITE, lw=1.1):
+    def filet(self, y, color=TAUPE, lw=0.5):
         self.fig.add_artist(Line2D([(self.px + 8) / W, (W - 10) / W], [1 - y / H] * 2, color=color, lw=lw))
 
     def intertitre(self, s):
@@ -204,11 +204,11 @@ def remplissage(r, it, mode="plan"):
     if ro == "logements":
         return "white"
     if ro == "voisin":
-        return "#F1EEEA"
+        return "#F0F0F0"
     if ro in ("sol_ext",):
-        return "#F3F1EE"
+        return "#F3F3F3"
     if ro == "trottoir":
-        return "#E9E5DF"
+        return "#E8E8E8"
     if ro == "fenetre_logt":
         return "#E7ECEE"
     if ro == "arbre":
@@ -216,7 +216,13 @@ def remplissage(r, it, mode="plan"):
     if ro == "vitrage":
         return VERRE
     k = {"sol": 0.30, "plafond": 0.40, "revetement": 0.45, "structure": 0.25, "cloison": 0.3}.get(ro, 0.42)
-    return D.eclaircir(it["rgba"], k)
+    return sourdine(D.eclaircir(it["rgba"], k))
+
+
+def sourdine(rgb, garde=0.4):
+    """Charte v2 : matières en sourdine sur papier blanc (garde 40 % de la saturation)."""
+    rgb = np.asarray(rgb[:3], float); g = rgb @ np.array([0.299, 0.587, 0.114])
+    return tuple(g + (rgb - g) * garde)
 
 
 def peindre(ax, R, mode="plan", trait_items=True, z0=10):

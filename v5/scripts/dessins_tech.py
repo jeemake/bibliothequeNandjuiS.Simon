@@ -117,7 +117,7 @@ def fond_de_plan(ax, sc, z=1.0, xlim=None, ylim=None, mobilier=True, tracer_wc=T
     for r in R:
         sanit = r["e"]["tag"] in ("4350629", "4350630", "4350631")
         for it in r["items"]:
-            fc = "#F6F3EE" if r["role"] == "sol" else "white"
+            fc = "#F7F7F7" if r["role"] == "sol" else "white"
             D.patch(ax, it["g"], fc=fc, ec=FOND_TRAIT if not sanit else ENCRE, lw=D.LW[1] * (0.6 if not sanit else 1.0), z=zz)
             zz += 0.001
         if r["tout"] is not None and r["role"] not in ("sol",) and sanit:
@@ -129,13 +129,13 @@ def fond_de_plan(ax, sc, z=1.0, xlim=None, ylim=None, mobilier=True, tracer_wc=T
         if r["role"] == "structure":
             D.patch(ax, g, fc=POCHE, ec=POCHE, lw=D.LW[2], z=60)
         elif r["role"] == "cloison":
-            D.patch(ax, g, fc="#A39C95", ec="#6F6862", lw=D.LW[1], z=59)
+            D.patch(ax, g, fc="#A3A3A3", ec="#6F6F6F", lw=D.LW[1], z=59)
         elif r["role"] == "vitrage":
-            D.patch(ax, g, fc=DS.VERRE, ec="#6F6862", lw=D.LW[1], z=58)
+            D.patch(ax, g, fc=DS.VERRE, ec="#6F6F6F", lw=D.LW[1], z=58)
         elif r["role"] in ("revetement",):
-            D.patch(ax, g, fc="#E8E2DA", ec="#9C948C", lw=D.LW[1] * 0.6, z=57)
+            D.patch(ax, g, fc="#E6E6E6", ec="#9A9A9A", lw=D.LW[1] * 0.6, z=57)
         else:
-            D.patch(ax, g, fc="#EFEAE3", ec="#9C948C", lw=D.LW[1] * 0.6, z=57)
+            D.patch(ax, g, fc="#EEEEEE", ec="#9A9A9A", lw=D.LW[1] * 0.6, z=57)
     return v, R
 
 
@@ -827,9 +827,9 @@ def rendu_coupe(ax, sc, vue, garder, res_plb):
             if col:
                 D.patch(ax, it["g"], fc=D.eclaircir(matplotlib.colors.to_rgb(col), 0.45), ec=col, lw=D.LW[1], z=200 + z)
             elif r["role"] == "vitrage":
-                D.patch(ax, it["g"], fc=DS.VERRE, ec="#6F6862", lw=D.LW[1], z=z, alpha=0.6)
+                D.patch(ax, it["g"], fc=DS.VERRE, ec="#6F6F6F", lw=D.LW[1], z=z, alpha=0.6)
             else:
-                fc = D.eclaircir(it["rgba"], 0.22) if r["role"] in ("mobilier", "revetement", "plafond", "autre") else "#E4E0DA" if r["role"] == "structure" else "white"
+                fc = D.eclaircir(it["rgba"], 0.22) if r["role"] in ("mobilier", "revetement", "plafond", "autre") else "#E2E2E2" if r["role"] == "structure" else "white"
                 D.patch(ax, it["g"], fc=fc, ec=FOND_TRAIT, lw=D.LW[1] * 0.7, z=z)
             z += 0.001
         if r["tout"] is not None and col:
@@ -844,7 +844,7 @@ def rendu_coupe(ax, sc, vue, garder, res_plb):
         elif col:
             D.patch(ax, g, fc=D.eclaircir(matplotlib.colors.to_rgb(col), 0.75), ec=col, lw=D.LW[2], z=320)
         elif r["role"] == "cloison":
-            D.patch(ax, g, fc="#A39C95", ec=ENCRE, lw=D.LW[2], z=310)
+            D.patch(ax, g, fc="#A3A3A3", ec=ENCRE, lw=D.LW[2], z=310)
         elif r["role"] == "vitrage":
             D.patch(ax, g, fc=DS.VERRE, ec=ENCRE, lw=D.LW[1], z=310)
         else:

@@ -5,7 +5,8 @@ Dans les cartouches : toujours le lockup (nom à côté du symbole, jamais le sy
 en impression, version mono sur fond clair et inverse sur fond sombre — voir draw_lockup().
 Le portique voûté (draw_logo) n'est conservé que pour régénérer les planches V4 archivées.
 Couleurs : terre cuite, iroko, sable, blanc chaux, encre ; olive en appoint.
-Typographies : Manrope (le nom K&Démi), DM Serif Display (titres), Jost (texte, légendes).
+Typographies : Manrope (le nom K&Démi dans le logo), Archivo (titres SemiBold, texte Regular, légendes Medium).
+Charte v2 (15/10/2026) : papier blanc, encre quasi noire, terre cuite en accent seulement, indigo rare.
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,11 +17,11 @@ from matplotlib.path import Path
 
 import os
 FD = os.environ.get("KDEMI_FONTS", os.path.join(os.path.dirname(os.path.abspath(__file__)), "polices")) + os.sep
-F_TITRE = FD + "dm-serif-display-latin-400-normal.ttf"
-F_TITRE_I = FD + "dm-serif-display-latin-400-italic.ttf"
-F_LIGHT = FD + "jost-latin-300-normal.ttf"
-F_TEXTE = FD + "jost-latin-400-normal.ttf"
-F_MEDIUM = FD + "jost-latin-500-normal.ttf"
+F_TITRE = FD + "archivo-latin-600-normal.ttf"
+F_TITRE_I = FD + "archivo-latin-500-normal.ttf"
+F_LIGHT = FD + "archivo-latin-400-normal.ttf"
+F_TEXTE = FD + "archivo-latin-400-normal.ttf"
+F_MEDIUM = FD + "archivo-latin-500-normal.ttf"
 F_NOM = FD + "manrope-latin-500-normal.ttf"
 F_NOM_FORT = FD + "manrope-latin-600-normal.ttf"
 for p in (F_TITRE, F_TITRE_I, F_LIGHT, F_TEXTE, F_MEDIUM, F_NOM, F_NOM_FORT):
@@ -35,15 +36,15 @@ FP_NOM = FontProperties(fname=F_NOM)            # Manrope : le nom « K&Démi »
 FP_NOM_FORT = FontProperties(fname=F_NOM_FORT)
 
 # --- palette -------------------------------------------------------------------
-ENCRE = "#2B2420"        # texte, traits
-TAUPE = "#7D7168"        # texte secondaire, cotes
-TERRE_CUITE = "#B4583E"  # couleur signature : titres, filets, accents
+ENCRE = "#4A4A4A"        # texte et traits : gris neutre (charte v2, pas de noir)
+TAUPE = "#8C8C8C"        # texte secondaire, cotes, filets
+TERRE_CUITE = "#B4583E"  # accent : filets courts, numéros, & du logo
 IROKO = "#9A6B43"        # repères mobilier, matière bois
-SABLE = "#E6D6BF"        # aplats, fonds de cartouche
-SABLE_CLAIR = "#F4EDE2"  # fond de panneau, alternance de lignes
-BLANC_CHAUX = "#FBF8F3"  # fond de page
+SABLE = "#E8E8E8"        # aplats neutres, cartouches de légende
+SABLE_CLAIR = "#F4F4F4"  # alternance de lignes de tableau
+BLANC_CHAUX = "#FFFFFF"  # papier
 OLIVE = "#5F7A4B"        # dégagements, végétal (usage restreint)
-POCHE = "#4A403A"        # murs coupés
+POCHE = "#2E2E2E"        # murs coupés (poché)
 
 def arch_path(x0, x1, z0, z_spring, n=48):
     r = (x1 - x0) / 2; c = (x0 + x1) / 2

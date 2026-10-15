@@ -212,7 +212,7 @@ def render(tri, col, ids, cam, size=(2560, 1600), ss=2, sun_dir=(-0.35, -0.55, 0
             if k in prog2:
                 prog2[k].value = prog[k].value
         shadow_tex.use(0); prog2["shadow"].value = 0
-        c.vertex_array(prog2, [(vb_tr, "3f 3f 4f 1f", "in_pos", "in_nrm", "in_col", "in_id")]).render()
+        c.vertex_array(prog2, [(vb_tr, "3f 3f 4f " + ("1f" if "in_id" in prog2 else "4x"), "in_pos", "in_nrm", "in_col", *(["in_id"] if "in_id" in prog2 else []))]).render()   # in_id peut être éliminé par le compilateur GLSL (llvmpipe)
         c.depth_mask = True
         c.disable(moderngl.BLEND)
         shade = np.frombuffer(tex.read(), "f2").reshape(H, W, 4)[..., :3].astype(np.float32)
