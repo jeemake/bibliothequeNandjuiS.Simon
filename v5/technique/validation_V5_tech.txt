@@ -1,0 +1,15 @@
+Fichier : v5/DECIMO_ESQ_V5_tech.ifc
+Schéma : IFC4
+Entités : 41788
+ifcopenshell 0.9.0
+
+== ifcopenshell.validate (schéma + règles EXPRESS) ==
+Erreurs : 0
+Avertissements : 0
+
+== Géométrie (ifcopenshell.geom, tous les IfcProduct avec représentation) ==
+Produits avec représentation : 303
+Géométrie OK : 303
+Échecs : 0
+
+Répartition : IfcBuildingElementProxy 87, IfcCableCarrierSegment 18, IfcCommunicationsAppliance 2, IfcCovering 16, IfcDiscreteAccessory 4, IfcDoor 6, IfcElectricDistributionBoard 1, IfcFilter 1, IfcFlowMeter 1, IfcFlowTerminal 1, IfcFurnishingElement 30, IfcFurniture 4, IfcJunctionBox 1, IfcLightFixture 32, IfcMember 3, IfcOpeningElement 10, IfcOutlet 20, IfcPipeFitting 8, IfcPipeSegment 10, IfcPlate 1, IfcProtectiveDevice 1, IfcPump 2, IfcSensor 2, IfcSlab 1, IfcSpace 8, IfcSwitchingDevice 5, IfcUnitaryEquipment 2, IfcValve 6, IfcWall 5, IfcWallStandardCase 11, IfcWasteTerminal 1, IfcWindow 3

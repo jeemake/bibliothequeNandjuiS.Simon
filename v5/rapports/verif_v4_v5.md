@@ -57,7 +57,7 @@
 | Tableau loin de l'eau | 5.92 m du WC (lave-mains et WC dans le local 07) | oui |
 | Split mural 9 000 BTU/h - unité intérieure 1 : sur mur plein, en hauteur, hors tables | +2.42 / +2.71 ; fixé sur ['4350588'] ; au-dessus de : aucune table | oui |
 | Split mural 9 000 BTU/h - unité intérieure 2 : sur mur plein, en hauteur, hors tables | +2.30 / +2.59 ; fixé sur ['4350587'] ; au-dessus de : aucune table | oui |
-| Réservations Ø 0,10 hors structure (5) | 0 intersection(s) avec poteaux / voiles / dalle | oui |
+| Réservations hors structure (5) | 0 intersection(s) avec poteaux / voiles / dalle | oui |
 | Liaisons splits : faux-plafond puis baie arrière existante | 2 faisceaux, 0 intersection(s) avec la structure | oui |
 | Coffrages EU/EV 0,30 x 0,30 « À relever sur site » | 2 coffrages [(0.3, 0.3), (0.3, 0.3)] ; statut ['À relever sur site'] | oui |
 | Pas de toiture, d'escalier, de TGBT ni de groupe électrogène | 0 trouvé(s) | oui |

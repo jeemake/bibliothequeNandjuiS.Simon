@@ -47,8 +47,10 @@ def fr(x, n=2):
 
 # --- mise en page ---------------------------------------------------------------------------
 class Planche:
-    def __init__(self, num, titre, ligne, px=290):
+    def __init__(self, num, titre, ligne, px=290, maquette=V5_IFC, dossier=DESSINS):
         self.num, self.titre, self.px = num, titre, px
+        self.maquette, self.dossier = maquette, dossier
+        self.sha = SHA if maquette == V5_IFC else hashlib.sha256(open(maquette, "rb").read()).hexdigest()[:10]
         self.fig = plt.figure(figsize=(W * MM, H * MM), facecolor="white")
         self.fig.add_artist(Rectangle((px / W, 0), (W - px) / W, 1, transform=self.fig.transFigure,
                                       fc=SABLE_CLAIR, ec="none", zorder=-5))
@@ -108,7 +110,7 @@ class Planche:
         self.filet(y0 - 2, TAUPE, 0.4)
         rows = [("Projet", "Bibliothèque Decimo — RDC sous logements, Abidjan"), ("Phase", phase),
                 ("Planche", f"{self.num} — {self.titre}"), ("Échelle", echelle + "  ·  format A3"),
-                ("Maquette", f"v5/DECIMO_ESQ_V5.ifc (IFC4) · sha256 {SHA}…"), ("Date", DATE + "  ·  indice A")]
+                ("Maquette", f"{os.path.relpath(self.maquette, RACINE)} (IFC4) · sha256 {self.sha}…"), ("Date", DATE + "  ·  indice A")]
         for k, (a, b) in enumerate(rows):
             y = y0 + k * 4.3
             self.T(x0, y, a.upper(), 5.0, TAUPE, fontproperties=FP_MEDIUM)
@@ -126,8 +128,8 @@ class Planche:
         return ax
 
     def enregistrer(self, nom):
-        os.makedirs(DESSINS, exist_ok=True)
-        base = os.path.join(DESSINS, f"{self.num}_{nom}")
+        os.makedirs(self.dossier, exist_ok=True)
+        base = os.path.join(self.dossier, f"{self.num}_{nom}")
         self.fig.savefig(base + ".pdf")
         self.fig.savefig(base + ".svg")
         self.fig.savefig(base + ".png", dpi=200)

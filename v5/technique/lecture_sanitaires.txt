@@ -1,0 +1,3 @@
+Lecture des sanitaires V4 du local 07 dans v5/DECIMO_ESQ_V5.ifc (aucune modification)
+- WC 0UsrJW3tn86Pjy_3YJTo9z lu (bbox [0.187, 6.715, 0.0] - [0.89, 7.085, 0.83]) ; sortie EV non décrite dans l'IFC (représentation mappée sans port) : hypothèse sortie horizontale arrière h 0,18, à relever
+- Lave-mains lu : 2 élément(s) V4 (4350631, 4350630), plan à +0.75 ; bonde au centre de la vasque, siphon et robinetterie non modélisés en V4 (hypothèse)
