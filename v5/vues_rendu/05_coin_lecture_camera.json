@@ -2,7 +2,7 @@
   "vue": "05_coin_lecture",
   "description": "Coin lecture : vitrine en arche, claustra Adinkra, rayonnages, table ronde",
   "source_ifc": "v5/DECIMO_ESQ_V5.ifc",
-  "source_sha256": "985f48d48b54ac23238c42774d7b8b63669e23f919ac7345ce9bac62e21082bc",
+  "source_sha256": "34152b66f698d02a911699e31d385026fd885590ce8719ef55c1b13bbd0db5e6",
   "repere": "monde IFC, mètres, z vers le haut, origine angle intérieur sud-ouest du RDC (sol fini = 0)",
   "camera": {
     "position_m": [
