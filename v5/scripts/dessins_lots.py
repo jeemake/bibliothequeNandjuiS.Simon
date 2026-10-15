@@ -244,14 +244,52 @@ def elements_plom(sc):
     return out
 
 
-def trace_tuyau(ax, pts, reseau, plenum_seuil=2.0, z=220, lw=None):
+def trace_tuyau(ax, pts, reseau, plenum_seuil=2.0, z=280, lw=None):
     col, _ = RESEAU.get(reseau, (ENCRE, reseau))
     ls = "-"
     if reseau == "Condensats":
         ls = (0, (3, 1.2))
     if pts[:, 2].min() > plenum_seuil:
         ls = (0, (4, 1.5)) if ls == "-" else ls
-    ax.plot(pts[:, 0], pts[:, 1], color=col, lw=lw or D.LW[2], ls=ls, zorder=z, solid_capstyle="round")
+    lw = lw or (D.LW[4] if reseau in ("EU", "EV") else D.LW[2])
+    ax.plot(pts[:, 0], pts[:, 1], color=col, lw=lw, ls=ls, zorder=z, solid_capstyle="round", alpha=0.95)
+
+
+def fleche_ecoulement(ax, pts, col, z=290):
+    if len(pts) < 2:
+        return
+    p0, p1 = pts[-2, :2], pts[-1, :2]
+    d = p1 - p0
+    n = np.linalg.norm(d)
+    if n < 1e-6:
+        return
+    d /= n
+    fleche(ax, p0 + d * 0.04, p0 + d * min(0.22, n * 0.45), col, z=z)
+
+
+def dans_zone(pts, x0, x1, y0, y1):
+    return pts[:, 0].max() >= x0 and pts[:, 0].min() <= x1 and pts[:, 1].max() >= y0 and pts[:, 1].min() <= y1
+
+
+def lignes_reseaux_table(I, sc):
+    G = par_guid(sc)
+    lr = longueur_reseaux(I, sc)
+    rows = []
+    for s in I["reseaux"]:
+        lib = court((s.get("nom") or "").split("(")[0].strip(), 28)
+        mem = [g for g in s.get("membres", []) if g in G]
+        rnom = s.get("nom", "")
+        rkey = None
+        for k in lr:
+            if k in rnom or rnom.upper().startswith(k.upper()[:2]):
+                rkey = k
+                break
+        info = lr.get(rkey or "", {})
+        dn = court(" / ".join(sorted({str(x) for x in info.get("dn", []) if x})), 14)
+        mat = court(" / ".join(sorted({str(x) for x in info.get("mat", []) if x})), 22)
+        pente = f"{min(info['pmin']):.1f} %" if info.get("pmin") else "—"
+        rows.append([lib, str(len(mem)), fr(info.get("L", 0), 1), dn or "—", mat or "—", pente, court(s.get("Statut", "—"), 18)])
+    return rows
 
 
 def sym_organe_plom(ax, x, classe, reseau, n=None):
@@ -665,58 +703,28 @@ def A10(sc):
         if x["classe"] != "IfcPipeSegment" or not x["dirs"]:
             continue
         for d in x["dirs"]:
-            trace_tuyau(ax, d[0], x["reseau"])
+            trace_tuyau(ax, d[0], x["reseau"], z=280)
     for e in sc:
         if est(e, "Descente EU/EV"):
             lo, hi = bb(e)
-            cx, cy = (lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2
-            ax.add_patch(Rectangle((lo[0], lo[1]), hi[0] - lo[0], hi[1] - lo[1], fc="none", ec=OLIVE, lw=D.LW[2], zorder=280))
+            cx = (lo[0] + hi[0]) / 2
+            ax.add_patch(Rectangle((lo[0], lo[1]), hi[0] - lo[0], hi[1] - lo[1], fc="none", ec=OLIVE, lw=D.LW[2], zorder=260))
             ax.plot([cx, cx], [lo[1], hi[1]], color=EV_C, lw=D.LW[4], zorder=281, solid_capstyle="butt")
-            label(ax, cx + 0.18, cy, "Ø 100\nhyp.", size=3.5, col=OLIVE, z=420)
         if est(e, "Coffrage acoustique descente"):
-            g = D.contour_complet(e, v)
-            D.patch(ax, g, fc="none", ec=TAUPE, lw=D.LW[2], z=275, ls=(0, (2, 2)))
-            c = centre_xy(e)
-            tag(ax, c[0] + 0.22, c[1], "À relever\nsur site", size=3.5, ha="left")
+            D.patch(ax, D.contour_complet(e, v), fc="none", ec=TAUPE, lw=D.LW[2], z=275, ls=(0, (2, 2)))
     for e in sc:
         if est(e, "Split mural") and "intérieure" in e["nom"]:
-            D.patch(ax, D.contour_complet(e, v), fc="white", ec=OLIVE, lw=D.LW[1], z=290, ls=(0, (3, 1.5)))
+            D.patch(ax, D.contour_complet(e, v), fc="white", ec=OLIVE, lw=D.LW[1], z=270, ls=(0, (3, 1.5)))
         if est(e, "Mini-pompe de relevage"):
-            c = centre_xy(e)
-            sym_tee(ax, c, col=COND)
-            k = "1" if "split 1" in e["nom"] else "2"
-            tag(ax, c[0] + 0.12, c[1], f"P{k}", size=3.4, col=COND)
+            sym_tee(ax, centre_xy(e), col=COND)
     for x in PL:
         if x["classe"] in ("IfcValve", "IfcFlowMeter", "IfcPipeFitting", "IfcWasteTerminal"):
             sym_organe_plom(ax, x, x["classe"], x["reseau"])
     cof = next(e for e in sc if est(e, "Coffret de comptage AEP"))
     D.patch(ax, D.contour_complet(cof, v), fc="white", ec=AEP, lw=D.LW[2], z=300, hatch="////")
-    for x in PL:
-        if x["classe"] != "IfcPipeSegment" or not x["dirs"]:
-            continue
-        r, dn = x["reseau"], x.get("dn", "")
-        if r in ("EU", "EV") and dn:
-            pts = x["dirs"][0][0]
-            mid = pts[len(pts) // 2]
-            txt = f"PVC Ø {int(dn) if float(dn) == int(float(dn)) else dn} · 2 %"
-            tag(ax, mid[0] + 0.08, mid[1], txt, size=3.3, col=RESEAU[r][0])
-            if r == "EV":
-                p0, p1 = pts[-2], pts[-1]
-                d = p1[:2] - p0[:2]; d /= max(np.linalg.norm(d), 1e-9)
-                fleche(ax, p0[:2] + d * 0.05, p0[:2] + d * 0.22, EV_C)
-        if r == "AEP" and dn in (12, 15, "12", "15"):
-            pts = x["dirs"][0][0]
-            mid = pts[len(pts) // 2]
-            tag(ax, mid[0], mid[1] + 0.06, f"MC {int(dn) + 4}", size=3.3, col=AEP)
-        if r == "Condensats":
-            pts = x["dirs"][0][0]
-            if pts[:, 2].min() > 2.0:
-                mid = pts[len(pts) // 2]
-                tag(ax, mid[0], mid[1], "PVC cristal\n10 × 14", size=3.2, col=COND)
     r8 = nom(sc, "Réservation R8 Ø 0,04 - Passage condensats réunion -> rangement (cloison placo 4350621)")
     c8 = centre_xy(r8)
     D.patch(ax, D.contour_complet(r8, v), fc="none", ec=COND, lw=D.LW[1], z=320, ls=(0, (2, 2)))
-    tag(ax, c8[0] + 0.12, c8[1], "R8", size=3.8, col=COND, fontproperties=FP_MEDIUM)
     sing = [(1, "Colonne / piquage AEP immeuble (position, DN, pression à relever)", np.array([0.20, 7.18]), (0.55, 7.75)),
             (2, "Coffret de comptage (vanne, compteur, clapet EA, réducteur si P > 3 bar)", np.array([1.20, 7.34]), (1.55, 7.75)),
             (3, "WC V4 conservé (4350629), alimentation flexible — non dupliqué", np.array([0.45, 7.05]), (0.15, 6.55)),
@@ -733,59 +741,83 @@ def A10(sc):
         label(ax, x_, y_, s, size=4.4, col=TAUPE, z=405)
     cote(ax, -0.09, 6.69, 7.80, "6,78", ext=7.59)
     echelle_graphique(ax, 5.0, -0.65, 2, 1.0)
-    # zoom WC 1/25
-    p.T(162, 12, "ZOOM WC / RANGEMENT — 1/25", 6.0, TERRE_CUITE, fontproperties=FP_MEDIUM)
-    axz = p.axes(162, 22, (0.0, 3.0), (5.0, 7.5), 25)
-    fond_plan(axz, sc, z_coupe=1.0, voile=0.72, garder_tech=("Descente", "Coffrage", "WC", "lave-mains"))
+    Zx0, Zx1, Zy0, Zy1 = 0.0, 3.05, 4.95, 7.55
+    p.T(162, 12, "ZOOM WC / RANGEMENT — 1/25", 6.2, TERRE_CUITE, fontproperties=FP_MEDIUM)
+    axz = p.axes(162, 20, (0.0, 3.0), (5.0, 7.5), 25)
+    fond_plan(axz, sc, z_coupe=1.0, voile=0.70, garder_tech=("Descente", "Coffrage", "WC", "lave-mains", "Coffret"))
     for x in PL:
-        if x["classe"] != "IfcPipeSegment" or not x["dirs"]:
-            continue
-        pts = x["dirs"][0][0]
-        if pts[:, 0].max() < 3.05 and pts[:, 1].min() > 4.9:
+        if x["classe"] == "IfcPipeSegment" and x["dirs"]:
             for d in x["dirs"]:
-                trace_tuyau(axz, d[0], x["reseau"], z=220)
-    for x in PL:
-        if x["classe"] in ("IfcValve", "IfcFlowMeter", "IfcPipeFitting", "IfcWasteTerminal"):
+                if dans_zone(d[0], Zx0, Zx1, Zy0, Zy1):
+                    trace_tuyau(axz, d[0], x["reseau"], z=280)
+        elif x["classe"] in ("IfcValve", "IfcFlowMeter", "IfcPipeFitting", "IfcWasteTerminal"):
             c = centre_xy(x["e"])
-            if c[0] < 3.05 and c[1] > 4.9:
+            if Zx0 <= c[0] <= Zx1 and Zy0 <= c[1] <= Zy1:
                 sym_organe_plom(axz, x, x["classe"], x["reseau"])
+    D.patch(axz, D.contour_complet(cof, v), fc="white", ec=AEP, lw=D.LW[2], z=300, hatch="////")
+    for e in sc:
+        if e["tag"] in ("4350629", "4350630", "4350631"):
+            D.patch(axz, D.contour_complet(e, v), fc="white", ec=ENCRE, lw=D.LW[2], z=295)
+    for x_, y_, t in ((0.18, 7.48, "Colonne AEP\n(à relever)"), (1.05, 7.44, "Vanne arrêt"), (1.18, 7.48, "Compteur M"),
+                       (1.32, 7.44, "Clapet EA"), (1.42, 7.48, "Réducteur\nsi P > 3 bar"), (1.54, 7.44, "Té distribution"),
+                       (1.15, 7.30, "Coffret comptage"), (0.48, 7.22, "Robinet WC"), (0.28, 7.12, "Pipe WC Ø 100"),
+                       (0.30, 7.30, "Piquage EU Ø 40"), (0.22, 7.05, "Culotte EV"), (0.22, 6.98, "EV Ø 100 · 2 %"),
+                       (2.84, 7.12, "Robinet LM"), (2.78, 7.00, "Robinet temporisé"), (2.70, 6.88, "Siphon LM"),
+                       (2.74, 7.34, "Clapet aérateur Ø 40"), (2.55, 7.28, "EU Ø 40 · 2 %"), (1.45, 7.36, "MC 20"),
+                       (2.70, 7.36, "MC 20 LM")):
+        tag(axz, x_, y_, t, size=3.9, ha="left")
+    tag(axz, 0.40, 6.92, "WC V4 conservé\n(tag 4350629)", size=4.1, ha="left")
+    tag(axz, 2.50, 6.92, "Lave-mains V4\n(4350630 / 4350631)", size=3.9, ha="left")
+    for x in PL:
+        if x["classe"] == "IfcPipeSegment" and x["reseau"] in ("EU", "EV") and x["dirs"]:
+            pts = x["dirs"][0][0]
+            if dans_zone(pts, Zx0, Zx1, Zy0, Zy1):
+                fleche_ecoulement(axz, pts, RESEAU[x["reseau"]][0])
     echelle_graphique(axz, 2.35, 5.05, 1, 1.0)
-    # élévation mur nord WC 1/25
-    p.T(162, 88, "ÉLÉVATION MUR NORD WC — 1/25 (V4 conservé)", 6.0, TERRE_CUITE, fontproperties=FP_MEDIUM)
-    axe = p.axes(162, 98, (0.0, 3.0), (-0.1, 3.4), 25)
+    p.T(162, 124, "ÉLÉVATION MUR NORD WC — 1/25", 6.2, TERRE_CUITE, fontproperties=FP_MEDIUM)
+    axe = p.axes(162, 132, (0.0, 3.0), (-0.10, 1.60), 25)
     vn = D.Vue((0, 1, 0), (1, 0, 0), (0, 0, 1), coupe=((0, -1, 0), -6.4003))
-    Rn = D.calculer(sc, vn, lambda e, r: r not in ("logements", "fenetre_logt", "sol_ext", "trottoir", "arbre", "voisin") and bb(e)[1][1] >= 6.3)
+    Rn = D.calculer(sc, vn, lambda e, r: r not in ("logements", "fenetre_logt", "sol_ext", "trottoir", "arbre", "voisin")
+                    and bb(e)[1][1] >= 6.25 and bb(e)[1][2] <= 1.65)
     peindre(axe, Rn, trait_items=False)
     pocher(axe, [r for r in Rn if r["role"] in ("structure", "cloison")], z=60)
+    for e in sc:
+        if e["tag"] in ("4350629", "4350630", "4350631") or est(e, "Coffret de comptage"):
+            D.patch(axe, D.contour_complet(e, vn), fc="white", ec=ENCRE, lw=D.LW[2], z=200)
     for x in PL:
         if x["classe"] != "IfcPipeSegment" or not x["dirs"]:
             continue
         for d in x["dirs"]:
             pts = d[0]
-            if pts[:, 1].max() < 6.5 and pts[:, 0].max() < 3.1:
+            if pts[:, 1].max() < 6.55 and pts[:, 0].max() < 3.05 and pts[:, 2].max() <= 1.62:
                 col, _ = RESEAU.get(x["reseau"], (ENCRE, ""))
-                axe.plot(pts[:, 0], pts[:, 2], color=col, lw=D.LW[2], ls=(0, (4, 1.5)) if pts[:, 2].min() > 2 else "-", zorder=200)
-    for zz, t in ((0.32, "+0,32 réservoir"), (0.52, "+0,52 siphon LM"), (1.10, "+1,10 AEP")):
-        niveau(axe, 2.85, zz, t, size=4.0)
+                lw = D.LW[4] if x["reseau"] in ("EU", "EV") else D.LW[2]
+                axe.plot(pts[:, 0], pts[:, 2], color=col, lw=lw, ls=(0, (4, 1.5)) if pts[:, 2].min() > 2 else "-", zorder=280)
+    for zz, t in ((0.19, "+0,19 EV"), (0.32, "+0,32 AEP WC"), (0.52, "+0,52 EU"), (1.10, "+1,10 AEP")):
+        niveau(axe, 2.88, zz, t, size=4.6)
+    axe.plot([0.0, 3.0], [1.55, 1.55], color=TAUPE, lw=D.LW[1], ls=(0, (4, 3)), zorder=100)
+    label(axe, 1.5, 1.57, "suite faux-plafond (non représentée)", size=4.2, col=TAUPE, ha="center")
+    niveau(axe, 2.88, 3.00, "+3,00 FP (repère)", size=4.4)
     echelle_graphique(axe, 2.35, -0.05, 1, 1.0)
-    # tableau réseaux
-    x0, y0 = 6, 118
-    p.T(x0, y0, "RÉSEAUX (IFC — KDEMI_Reseau / KDEMI_Plomberie)", 6.2, TERRE_CUITE, fontproperties=FP_MEDIUM)
-    lr = longueur_reseaux(I, sc)
-    rows = []
-    for s in I["reseaux"]:
-        lib = s.get("nom", "")
-        rkey = next((k for k in lr if k in lib or lib.startswith(k)), None)
-        L = lr.get(rkey or "", {}).get("L", 0)
-        info = lr.get(rkey or "", {})
-        dn = " / ".join(sorted({str(x) for x in info.get("dn", []) if x}))
-        mat = court(" / ".join(sorted({str(x) for x in info.get("mat", []) if x})), 42)
-        pente = f"{min(info['pmin']):.1f} %" if info.get("pmin") else "—"
-        rows.append([lib.split("(")[0].strip(), fr(L, 1) + " m", dn or "—", mat, pente, s.get("Statut", "—")])
-    yy = tableau(p, x0, y0 + 6, [("Réseau", 42, "left"), ("L tuyaux", 14, "right"), ("DN mm", 12, "left"), ("Matériau", 38, "left"),
-                                  ("Pente mini", 14, "left"), ("Statut", 22, "left")], rows, size=4.35, dy=3.15)
-    for s in I["raccords"]:
-        p.T(x0, yy + 2, f"Raccordement V5 : {court(s[0], 35)} → {court(s[1], 35)}", 4.3, TAUPE); yy += 3.0
+    x0, y0 = 6, 196
+    p.T(x0, y0, "RÉSEAUX IFC — KDEMI_Reseau / KDEMI_Plomberie", 6.4, TERRE_CUITE, fontproperties=FP_MEDIUM)
+    tableau(p, x0, y0 + 5, [("Réseau", 30, "left"), ("Obj.", 7, "right"), ("L m", 10, "right"), ("DN", 14, "left"),
+                              ("Matériau", 28, "left"), ("Pente", 10, "left"), ("Statut", 14, "left")],
+            lignes_reseaux_table(I, sc), size=4.15, dy=3.0, w_total=148)
+    xr, yr = 162, 200
+    p.T(xr, yr, "RACCORDEMENTS SUR APPAREILS V4 (IfcRelConnectsElements)", 6.0, TERRE_CUITE, fontproperties=FP_MEDIUM)
+    rrows = []
+    for v5n, v4n, gid, desc in I["raccords"]:
+        el = next(e for e in sc if e["guid"] == gid)
+        rrows.append([court(v5n, 32), court(v4n, 28), el.get("tag", ""), court(desc or "", 36)])
+    yy = tableau(p, xr, yr + 5, [("Élément V5", 32, "left"), ("Appareil V4", 26, "left"), ("Tag", 9, "left"), ("Description", 42, "left")],
+                 rrows, size=4.05, dy=3.0, w_total=118)
+    yy += 3
+    p.T(xr, yy, "PAS DE CHAUFFE-EAU", 5.8, TERRE_CUITE, fontproperties=FP_MEDIUM)
+    for i, s in enumerate(["Un seul lave-mains, eau froide réseau (26-30 °C à Abidjan).",
+                           "Pas de circuit 20 A dédié ni de stockage d'eau chaude (légionelles).",
+                           "WC et lave-mains V4 conservés, raccordés en V5 sans duplication."]):
+        p.T(xr, yy + 4 + i * 3.2, s, 4.8, ENCRE)
     p.intertitre("Symboles")
     for rk, (_, lib) in RESEAU.items():
         col = RESEAU[rk][0]
@@ -815,76 +847,108 @@ def A10(sc):
     p.enregistrer("plan_plomberie_AEP_EU_EV_condensats")
 
 
-def _detail(p, x, y, titre, ech, sc, vue, ulim, vlim, garder=None, notes=(), z_niv=()):
+def _annote(ax, tx, ty, lx, ly, text, size=5.0):
+    ax.plot([tx, lx], [ty, ly], color=ENCRE, lw=D.LW[1], zorder=400, solid_capstyle="round")
+    ax.plot(tx, ty, "o", color=ENCRE, markersize=1.4, zorder=401)
+    tag(ax, lx, ly, text, size=size, ha="left" if lx >= tx else "right", va="center")
+
+
+def _detail(p, x, y, titre, ech, sc, vue, ulim, vlim, garder=None, notes=(), z_niv=(), peindre_tech=True):
     garder = garder or (lambda e, r: r not in ("logements", "fenetre_logt", "sol_ext", "trottoir", "arbre", "voisin"))
     ax = p.axes(x, y, ulim, vlim, ech)
     R = D.calculer(sc, vue, garder)
     peindre(ax, R, trait_items=False)
     pocher(ax, [r for r in R if r["role"] in ("structure", "cloison")], z=55)
-    pocher(ax, [r for r in R if r["role"] not in ("structure", "cloison") and role(r["e"]) != "technique"], z=45)
-    for u, v, t in z_niv:
-        niveau(ax, ulim[1] - 0.08 * (ulim[1] - ulim[0]), v, t, size=3.8)
-    for pu, pv, txt, du, dv in notes:
-        ax.plot([pu, pu + du], [pv, pv + dv], color=ENCRE, lw=D.LW[1], zorder=400)
-        label(ax, pu + du * 1.05, pv + dv * 1.05, txt, size=3.6, z=410, ha="left" if du >= 0 else "right")
-    p.T(x, y - 4, titre, 5.8, ENCRE, fontproperties=FP_MEDIUM)
-    p.T(x + 2, y - 7.5, f"Échelle 1/{ech}", 4.8, TAUPE)
-    echelle_graphique(ax, ulim[0] + 0.05 * (ulim[1] - ulim[0]), vlim[0] + 0.04 * (vlim[1] - vlim[0]), 1, 1.0)
+    if peindre_tech:
+        peindre(ax, [r for r in R if r["role"] not in ("structure", "cloison")], trait_items=False)
+    for _u, v, t in z_niv:
+        niveau(ax, ulim[1] - 0.06 * (ulim[1] - ulim[0]), v, t, size=4.8)
+    for tx, ty, lx, ly, txt in notes:
+        _annote(ax, tx, ty, lx, ly, txt, size=4.8)
+    p.T(x, y - 3, f"{titre}  ·  échelle 1/{ech}", 5.4, ENCRE, fontproperties=FP_MEDIUM)
+    echelle_graphique(ax, ulim[0] + 0.04 * (ulim[1] - ulim[0]), vlim[0] + 0.05 * (vlim[1] - vlim[0]), 1, 1.0)
     return ax, R
 
 
 def A11(sc):
     I = ifc()
     p = Planche("A11", "Détails techniques", "Coupe et élévations tirées de l'IFC  ·  Échelles 1/10 et 1/20 (A3)", px=290)
-    # D1 plénum
+    px0, py0, px1, py1 = PLACARD_NET
     v1 = D.Vue((0, 1, 0), (1, 0, 0), (0, 0, 1), coupe=((0, -1, 0), -3.0003))
     ax1, _ = _detail(p, 8, 18, "D1 — Faux-plafond acoustique et plénum", 10, sc, v1, (2.75, 3.95), (2.80, 3.58),
-                      lambda e, r: r in ("structure", "cloison", "plafond", "technique") or est(e, "Chemin de câbles", "Wi-Fi", "Suspente"),
-                      notes=[(3.20, 3.24, "Chemin C3 80×40", 0.0, 0.08), (3.75, 3.22, "AP Wi-Fi PoE", 0.0, 0.08),
-                             (3.55, 3.30, "Suspente M6 · 40 mm\n(non traversante)", 0.12, 0.0)],
-                      z_niv=[(0, 3.00, "+3,00 FP"), (0, 3.30, "+3,30 dalle")])
-    label(ax1, 3.35, 3.02, "FP acoustique\n40 mm", size=3.5, col=TAUPE)
-    # D5 seuil vitrine
+                     lambda e, r: r in ("structure", "cloison", "plafond", "technique") or est(e, "Chemin de câbles", "Wi-Fi", "Suspente"),
+                     notes=[(3.20, 3.24, 3.55, 3.34, "Chemin de câbles C3 80 x 40"), (3.75, 3.22, 3.92, 3.38, "Borne Wi-Fi PoE"),
+                            (3.48, 3.29, 3.20, 3.42, "Suspente M6, cheville 40 mm\n(non traversante)")],
+                     z_niv=[(0, 3.00, "+3,00 sous-face FP"), (0, 3.04, "+3,04 dessus FP"), (0, 3.30, "+3,30 dalle (0,20 hyp.)")])
+    cote(ax1, 3.00, 3.04, 3.30, "plénum 0,26", size=4.4)
+    cote(ax1, 3.04, 3.30, 3.55, "0,26", horiz=False, size=4.2)
+    tag(ax1, 3.34, 3.02, "FP acoustique 40 mm", size=4.6, ha="left")
     v5 = D.Vue((1, 0, 0), (0, 1, 0), (0, 0, 1), coupe=((-1, 0, 0), -1.1503))
-    _detail(p, 8, 108, "D5 — Seuil de vitrine baie A", 10, sc, v5, (-0.55, 0.50), (0.15, 0.85),
-            lambda e, r: r not in ("logements", "voisin", "arbre") and (bb(e)[0][0] < 1.2 or est(e, "Seuil", "Podium", "Vitrine", "Châssis")),
-            notes=[(0.05, 0.48, "Tôle pliée acier noir 30/10", 0.15, 0.0), (0.35, 0.55, "Appui existant", 0.0, 0.08),
-                   (-0.35, 0.42, "Podium iroko", 0.0, -0.08), (0.25, 0.72, "Allège V4 : pas de fixation", 0.12, 0.0)])
-    # D2 coffrage descente 1
+    def garder_d5(e, r):
+        if r in ("logements", "voisin", "arbre", "sol_ext"):
+            return False
+        if est(e, "Seuil", "Podium", "Vitrine", "Châssis", "claustra", "allège", "appui"):
+            return True
+        lo, hi = bb(e)
+        return lo[0] < 1.75 and (hi[2] < 0.85 if len(hi) > 2 else True)
+
+    ax5, _ = _detail(p, 8, 108, "D5 — Seuil de vitrine baie A", 10, sc, v5, (-0.35, 0.45), (0.20, 0.75), garder_d5,
+                     notes=[(0.72, 0.45, 0.35, 0.52, "Tôle pliée acier noir 30/10\nposée sur l'appui existant"),
+                            (0.72, 0.45, 1.05, 0.48, "Retour collé, aucune fixation\ndans l'allège V4")])
+    for e in sc:
+        if est(e, "Seuil de vitrine"):
+            D.patch(ax5, D.contour_complet(e, v5), fc="#2A2A2A", ec=ENCRE, lw=D.LW[2], z=80)
+        if est(e, "Podium"):
+            lo, hi = bb(e)
+            if hi[0] < 1.2:
+                D.patch(ax5, D.contour_complet(e, v5), fc=IROKO, ec=ENCRE, lw=D.LW[1], z=70, alpha=0.85)
     v2 = D.Vue((0, 0, -1), (1, 0, 0), (0, 1, 0), coupe=((0, 0, 1), 0.6003))
     ax2, _ = _detail(p, 8, 198, "D2 — Coffrage acoustique descente EU/EV 1", 10, sc, v2, (-0.10, 0.75), (6.85, 7.55),
-                     lambda e, r: r in ("structure", "cloison", "technique") or est(e, "Coffrage", "Descente"),
-                     notes=[(0.35, 7.26, "Coffrage 0,30×0,30\n2×BA13 hydro 25 + laine 25", 0.0, 0.12),
-                            (0.24, 7.18, "Colonne AEP (hyp.)", 0.10, 0.0), (0.15, 7.38, "Trappe 0,20×0,20", -0.08, 0.0)])
-    tag(ax2, 0.55, 7.48, "À relever sur site", size=3.5)
-    # D3 placard technique
-    v3 = D.Vue((0, -1, 0), (-1, 0, 0), (0, 0, 1), coupe=((0, 1, 0), 5.555))
-    _detail(p, 135, 18, "D3 — Placard technique (vue sud)", 20, sc, v3, (0.36, 1.30), (-0.05, 3.40),
-            lambda e, r: r not in ("logements", "fenetre_logt") and bb(e)[1][0] < 1.35,
-            notes=[(0.55, 1.15, "Disjoncteur branchement", 0.0, 0.10), (0.95, 1.55, "Coffret clim", 0.0, 0.08),
-                   (1.05, 2.05, "Baie 9U + PC P6", 0.0, 0.08), (0.70, 2.85, "Chemin câbles → plénum", 0.10, 0.0)],
-            z_niv=[(0, 0.0, "±0,00"), (0, 3.00, "+3,00")])
-    # D4 fixations oculus
+                     lambda e, r: r in ("structure", "cloison", "technique") or est(e, "Coffrage", "Descente", "Colonne montante AEP"),
+                     notes=[(0.35, 7.26, 0.62, 7.42, "Coffrage 0,30 x 0,30\n2 BA13 hydro 25 + laine 25 = 50 mm"),
+                            (0.24, 7.18, 0.05, 7.12, "Descente Ø 100 hyp."), (0.18, 7.34, -0.02, 7.48, "Trappe 0,20 x 0,20")])
+    tag(ax2, 0.55, 7.52, "À relever sur site", size=4.8)
+
+    def garder_d3(e, r):
+        if r in ("logements", "fenetre_logt", "sol_ext", "trottoir", "arbre", "voisin"):
+            return False
+        if est(e, "Porte pleine placard", "Habillage placard"):
+            return False
+        lo, hi = bb(e)
+        if est(e, "Coffret", "Baie informatique", "Chemin de câbles", "Réservation R5", "Suspente", "disjoncteur", "liaisons clim", "Arrivée"):
+            return lo[0] < 1.35 and hi[1] > 5.0
+        if lo[0] >= px0 - 0.05 and hi[0] <= px1 + 0.22 and lo[1] >= py0 - 0.05 and hi[1] <= py1 + 0.08:
+            return True
+        return r in ("structure", "cloison") and lo[0] < 1.32 and hi[1] > 5.05
+
+    v3 = D.Vue((0, -1, 0), (1, 0, 0), (0, 0, 1), coupe=((0, 1, 0), 5.570))
+    ax3, R3 = _detail(p, 135, 18, "D3 — Placard technique (vue vers la cloison arrière)", 20, sc, v3, (0.36, 1.30), (-0.05, 3.40),
+                      garder_d3,
+                      notes=[(0.70, 1.52, 0.42, 1.75, "AGCP (disjoncteur branchement)"), (0.98, 1.42, 1.22, 1.65, "Coffret liaisons clim"),
+                             (0.83, 0.55, 1.18, 0.78, "Baie informatique 9U"), (1.08, 0.45, 1.24, 0.35, "PC P6 (joue)"),
+                             (0.75, 3.22, 1.05, 3.38, "Chemin de câbles vers plénum"), (1.02, 3.24, 1.22, 3.42, "R5 Ø 0,10")],
+                      z_niv=[(0, 0.0, "±0,00 sol fini"), (0, 3.00, "+3,00 FP")])
+    cote(ax3, px0, px1, py0 - 0.02, "0,60", size=4.4)
+    cote(ax3, py0, py1, px1 + 0.04, "0,40 net", horiz=False, size=4.2)
+    tag(ax3, 0.55, 5.48, "Porte pleine 0,60\n(vers le rangement)", size=4.6, ha="center")
     v4 = D.Vue((0, 1, 0), (1, 0, 0), (0, 0, 1), coupe=((0, -1, 0), -5.6103))
-    _detail(p, 203, 18, "D4 — Fixations non traversantes (oculus / canopée)", 10, sc, v4, (5.74, 6.55), (2.85, 3.55),
-            lambda e, r: r in ("structure", "technique") or est(e, "Platine", "Suspente", "canopée", "oculus"),
-            notes=[(6.05, 3.28, "Platine canopée\nancrage 50 mm", 0.0, 0.10), (6.20, 3.05, "Suspente bandeau oculus\n40 mm, aucune traversée", 0.0, -0.10),
-                   (6.35, 2.95, "Dalle 200 mm hyp.", 0.12, 0.0)])
-    # inset pied arbre
-    ax4 = p.axes(248, 72, (5.85, 6.45), (2.92, 3.08), 10)
+    ax4, _ = _detail(p, 203, 18, "D4 — Fixations non traversantes (oculus / canopée)", 10, sc, v4, (5.74, 6.55), (2.85, 3.55),
+                     lambda e, r: r in ("structure", "technique") or est(e, "Platine", "Suspente", "canopée", "oculus"),
+                     notes=[(6.05, 3.28, 6.38, 3.42, "Platine canopée\nancrage 50 mm / dalle 200 mm"),
+                            (6.22, 3.06, 6.48, 2.92, "Suspente bandeau oculus 40 mm\naucune traversée de dalle")])
+    axi = p.axes(248, 72, (5.85, 6.45), (2.92, 3.08), 10)
     for e in sc:
         if est(e, "Platine de pied de l'arbre"):
             lo, hi = bb(e)
             if lo[0] > 5.8:
-                g = sbox(lo[0], lo[2], hi[0], hi[2])
-                D.patch(ax4, g, fc="white", ec=ENCRE, lw=D.LW[2], z=10)
-    label(ax4, 6.15, 3.02, "Pied arbre : 30 mm\ndallage 100 mm hyp.", size=3.4)
-    # D6 panneau passe-liaisons
+                D.patch(axi, sbox(lo[0], lo[2], hi[0], hi[2]), fc="white", ec=ENCRE, lw=D.LW[2], z=10)
+    tag(axi, 6.15, 3.02, "Pied arbre : ancrage 30 mm\ndallage 100 mm hyp.", size=4.6)
     v6 = D.Vue((1, 0, 0), (0, 1, 0), (0, 0, 1), coupe=((-1, 0, 0), -4.6003))
     _detail(p, 203, 118, "D6 — Panneau passe-liaisons (baie arrière V4)", 10, sc, v6, (7.00, 7.81), (2.40, 3.55),
-            lambda e, r: r not in ("voisin",) and (bb(e)[0][0] > 4.3 or est(e, "Panneau passe", "Réservation R3", "Réservation R4", "Liaison")),
-            notes=[(7.44, 2.68, "Panneau acier 40 mm\n(y 7,415-7,455)", 0.0, 0.10), (7.52, 2.85, "R3 / R4 Ø 0,10\ndans le panneau", 0.10, 0.0),
-                   (7.35, 3.15, "Liaisons frigorifiques", 0.0, 0.08), (7.55, 2.45, "Ouverture V4 inchangée", 0.0, -0.08)])
+            lambda e, r: r not in ("voisin",) and (bb(e)[0][0] > 4.3 or est(e, "Panneau passe", "Réservation R3", "Réservation R4", "Liaison", "split")),
+            notes=[(7.44, 2.68, 7.72, 2.82, "Panneau passe-liaisons\n(imposte baie arrière)"),
+                   (7.50, 2.85, 7.78, 2.98, "R3 / R4 Ø 0,10 dans le panneau"),
+                   (7.38, 3.12, 7.05, 3.28, "Liaisons frigorifiques"), (7.55, 2.42, 7.78, 2.28, "Ouverture V4 inchangée")])
     p.intertitre("Liste des détails")
     for t in ("D1 — Plénum acoustique, chemin C3, suspentes 40 mm", "D2 — Coffrage descente EU/EV 1 (50 mm, trappe)",
               "D3 — Placard technique (AGCP, clim, 9U, TD)", "D4 — Fixations canopée / oculus / pied arbre (KDEMI_Fixation)",
