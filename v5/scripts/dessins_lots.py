@@ -279,11 +279,10 @@ def lignes_reseaux_table(I, sc):
         lib = court((s.get("nom") or "").split("(")[0].strip(), 28)
         mem = [g for g in s.get("membres", []) if g in G]
         rnom = s.get("nom", "")
-        rkey = None
-        for k in lr:
-            if k in rnom or rnom.upper().startswith(k.upper()[:2]):
-                rkey = k
-                break
+        MAP = {"CFO": "CFO", "AEP": "AEP", "EU": "EU", "EV": "EV", "Condensats": "Condensats", "VP": "VP"}
+        rkey = next((MAP[k] for k in MAP if k in rnom.split()[0] or k in rnom), None)
+        if rkey is None:
+            rkey = next((k for k in lr if k in rnom), None)
         info = lr.get(rkey or "", {})
         dn = court(" / ".join(sorted({str(x) for x in info.get("dn", []) if x})), 14)
         mat = court(" / ".join(sorted({str(x) for x in info.get("mat", []) if x})), 22)
