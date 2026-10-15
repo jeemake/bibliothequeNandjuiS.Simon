@@ -8,7 +8,8 @@ ouvertures / remplissages des éléments V4 sont inchangées, qu'aucun ajout ne 
 structure (poteaux, voiles, dalle haute) et contrôle les règles techniques (plénum, placard,
 tableau, splits, réservations, coffrages).
 
-Usage : python3 v5/scripts/verif_v4_v5.py [rapport.md]    (code retour 0 si tous les écarts sont nuls)
+Usage : python3 v5/scripts/verif_v4_v5.py [--v5 FICHIER.ifc] [rapport.md]
+        (code retour 0 si tous les écarts sont nuls ; par défaut FICHIER = v5/DECIMO_ESQ_V5.ifc)
 """
 import os, sys, logging
 import numpy as np
@@ -17,9 +18,15 @@ import ifcopenshell.util.placement as up
 import ifcopenshell.util.element as ue
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from commun import V4_IFC, V5_IFC, Z_DALLE_SOUS, PLACARD_NET, DEGAGEMENT_TD, TABLEAU  # noqa
+from commun import RACINE, V4_IFC, V5_IFC, Z_DALLE_SOUS, PLACARD_NET, DEGAGEMENT_TD, TABLEAU  # noqa
 
 logging.disable(logging.WARNING)
+ARGS = sys.argv[1:]
+if "--v5" in ARGS:
+    k = ARGS.index("--v5")
+    V5_IFC = os.path.abspath(ARGS[k + 1])
+    del ARGS[k:k + 2]
+V5_REL = os.path.relpath(V5_IFC, RACINE)
 TOL = 1e-6           # m
 v4 = ifcopenshell.open(V4_IFC)
 v5 = ifcopenshell.open(V5_IFC)
@@ -235,7 +242,7 @@ for sp in by_name("Split mural"):
                  not over and lo[2] >= 2.2 and bool(wall)))
 resa = [p for p in v5.by_type("IfcBuildingElementProxy") if p.PredefinedType == "PROVISIONFORVOID"]
 rc = penetrations(resa, porteurs, 0.0005)
-tech.append((f"Réservations Ø 0,10 hors structure ({len(resa)})", f"{len(rc)} intersection(s) avec poteaux / voiles / dalle", len(rc) == 0))
+tech.append((f"Réservations hors structure ({len(resa)})", f"{len(rc)} intersection(s) avec poteaux / voiles / dalle", len(rc) == 0))
 liais = by_name("Liaisons frigorifiques")
 lc = penetrations(liais, porteurs, 0.0005)
 tech.append(("Liaisons splits : faux-plafond puis baie arrière existante", f"{len(liais)} faisceaux, {len(lc)} intersection(s) avec la structure", len(lc) == 0 and len(liais) == 2))
@@ -252,7 +259,7 @@ def fmt(x):
 
 
 out = ["# Comparaison V4 (existant) / V5", "",
-       f"- V4 : `DECIMO_ESQ_V4.ifc` ({v4.schema}, {len(old)} produits) ; V5 : `v5/DECIMO_ESQ_V5.ifc` ({v5.schema}, {len(v5.by_type('IfcProduct'))} produits)",
+       f"- V4 : `DECIMO_ESQ_V4.ifc` ({v4.schema}, {len(old)} produits) ; V5 : `{V5_REL}` ({v5.schema}, {len(v5.by_type('IfcProduct'))} produits)",
        f"- Tolérance : {TOL:g} m ; géométrie calculée par ifcopenshell.geom {ifcopenshell.version} (coordonnées monde, ouvertures déduites)", "",
        "| Catégorie | Éléments V4 | Retrouvés (GlobalId) | Identiques | Écart max placement (m) | Écart max sommets (m) | Écart max bbox (m) | Représentation identique | Ouvertures/remplissages identiques |",
        "|---|---|---|---|---|---|---|---|---|"]
@@ -287,6 +294,6 @@ good = not fails and not new_open_in_v4 and not clash_list and all(t[2] for t in
 out += ["", f"**Résultat global : {'CONFORME' if good else 'NON CONFORME'}**"]
 txt = "\n".join(out)
 print(txt)
-if len(sys.argv) > 1:
-    open(sys.argv[1], "w", encoding="utf-8").write(txt + "\n")
+if ARGS:
+    open(ARGS[0], "w", encoding="utf-8").write(txt + "\n")
 sys.exit(0 if good else 1)
