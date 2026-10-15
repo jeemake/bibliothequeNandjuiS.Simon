@@ -318,7 +318,7 @@ def longueur_reseaux(I, sc):
             continue
         r = pl.get("Reseau", "?")
         for d in p["dirs"]:
-            par[r]["L"] += LineString(d[0]).length
+            par[r]["L"] += l3d(d[0])
         par[r]["dn"].add(str(pl.get("DN_mm", "")))
         par[r]["mat"].add(pl.get("Materiau", ""))
         if pl.get("Pente_min_pct") not in (None, "", 0):
@@ -364,6 +364,11 @@ def tableau(p, x, y, cols, rows, size=4.7, dy=3.35, entete=TERRE_CUITE, w_total=
 def tag(ax, x, y, s, size=3.7, col=ENCRE, z=425, **kw):
     kw.setdefault("ha", "center"); kw.setdefault("va", "center")
     return ax.text(x, y, s, fontsize=size, color=col, zorder=z, bbox=dict(boxstyle="square,pad=0.12", fc="white", ec="none", alpha=0.85), **kw)
+
+
+def l3d(pts):
+    pts = np.asarray(pts, float)
+    return float(np.linalg.norm(np.diff(pts, axis=0), axis=1).sum()) if len(pts) > 1 else 0.0
 
 
 def court(s, n):
@@ -641,7 +646,7 @@ def A09(sc):
     rows.append(["Luminaires LED 2700 K de la V5 (conservés, raccordés)", str(lum), "plafond / suspension"])
     gl = [e for e in sc if e["classe"] == "IfcCableCarrierSegment" and e["lot"].startswith("Technique - ") and not est(e, "Chemin", "Conduit")]
     lg = sum(max(bb(e)[1] - bb(e)[0]) for e in gl)
-    cab = sum(LineString(d[0]).length for x in EL if x["classe"] == "IfcCableSegment" for d in x["dirs"])
+    cab = sum(l3d(d[0]) for x in EL if x["classe"] == "IfcCableSegment" for d in x["dirs"])
     rows.append(["Goulottes iroko et moulures (longueur cumulée)", f"{fr(lg, 1)} m", f"{len(gl)} tronçons"])
     rows.append(["Câbles (directrices IFC, descentes comprises)", f"{fr(cab, 0)} m", "hors réserve de raccordement"])
     tableau(p, x0, yy + 5.5, [("Ouvrage", 70, "left"), ("Qté", 13, "right"), ("Hauteur d'axe (m)", 34, "left")], rows, size=4.45, dy=3.2)

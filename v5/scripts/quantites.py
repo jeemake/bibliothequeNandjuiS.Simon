@@ -28,7 +28,7 @@ def directrices(p):
 
 
 def longueur(dirs):
-    return sum(LineString(d).length for d in dirs)
+    return sum(float(np.linalg.norm(np.diff(np.asarray(d, float), axis=0), axis=1).sum()) for d in dirs if len(d) > 1)
 
 
 def collect():
@@ -71,7 +71,7 @@ def collect():
 
 def ecrire(data):
     os.makedirs(os.path.dirname(OUT_MD), exist_ok=True)
-    lines = ["# Quantitatif — lots techniques V5 (hyp. ESQ Ahoua)\n", f"Source : `{V5_IFC}`\n"]
+    lines = ["# Quantitatif — lots techniques V5 (hyp. ESQ Ahoua)\n", "Source : `v5/DECIMO_ESQ_V5.ifc`\n"]
     lines.append("## Électricité\n")
     lines.append(f"- Circuits IFC : **{len(data['circuits'])}** ({', '.join(data['circuits'])})\n")
     lines.append(f"- Prises PC 16 A : **{data['pc']}** · RJ45 : **{data['rj']}** · Commandes : **{data['sw']}** · BAES : **{data['baes']}**\n")

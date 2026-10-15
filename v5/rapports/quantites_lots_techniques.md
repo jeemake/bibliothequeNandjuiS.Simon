@@ -1,34 +1,34 @@
 # Quantitatif — lots techniques V5 (hyp. ESQ Ahoua)
-Source : `/workspace/v5/DECIMO_ESQ_V5.ifc`
+Source : `v5/DECIMO_ESQ_V5.ifc`
 ## Électricité
 - Circuits IFC : **16** (CL1, CL2, E1, E2, E3, E4, E5, E6, E7, P1, P2, P3, P4, P5, P6, VDI)
 - Prises PC 16 A : **22** · RJ45 : **8** · Commandes : **6** · BAES : **4**
-- Longueur câbles (directrices, tous tronçons) : **214.7 m**
-  - CL1 : 22.1 m
-  - CL2 : 8.5 m
-  - E1 : 12.8 m
-  - E2 : 23.6 m
-  - E3 : 6.9 m
-  - E4 : 10.2 m
-  - E5 : 26.0 m
-  - E6 : 8.4 m
-  - E7 : 11.0 m
-  - P1 : 5.2 m
-  - P2 : 13.0 m
-  - P3 : 1.3 m
-  - P4 : 5.0 m
-  - P5 : 32.7 m
-  - P6 : 7.2 m
-  - VDI : 20.7 m
+- Longueur câbles (directrices, tous tronçons) : **298.1 m**
+  - CL1 : 24.4 m
+  - CL2 : 10.8 m
+  - E1 : 18.3 m
+  - E2 : 27.9 m
+  - E3 : 7.9 m
+  - E4 : 15.3 m
+  - E5 : 33.3 m
+  - E6 : 9.7 m
+  - E7 : 15.7 m
+  - P1 : 8.1 m
+  - P2 : 21.0 m
+  - P3 : 4.4 m
+  - P4 : 8.0 m
+  - P5 : 46.0 m
+  - P6 : 9.5 m
+  - VDI : 37.8 m
 
 ## Plomberie (longueurs tuyaux)
-- **AEP** : 3.84 m
-  - DN 12 mm : 2.76 m
+- **AEP** : 8.56 m
+  - DN 12 mm : 3.90 m
+  - DN 25 mm : 3.30 m
   - DN 15 mm : 0.95 m
-  - DN 10 mm : 0.13 m
-  - DN 25 mm : 0.00 m
-- **Condensats** : 15.10 m
-  - DN 10 mm : 15.10 m
+  - DN 10 mm : 0.41 m
+- **Condensats** : 16.48 m
+  - DN 10 mm : 16.48 m
 - **EU** : 2.73 m
   - DN 32 mm : 2.73 m
 - **EV** : 0.19 m
