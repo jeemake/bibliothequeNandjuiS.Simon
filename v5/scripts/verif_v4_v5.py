@@ -221,8 +221,13 @@ gen = [p for p in v5.by_type("IfcProduct") if p.Representation is not None and n
 obst = []
 for p in gen:
     lo, hi = bb(p)
-    if lo[0] < x1 - 1e-3 and hi[0] > x0 + 1e-3 and lo[1] < y1 - 1e-3 and hi[1] > y0 + 1e-3 and lo[2] < 2.0 and hi[2] > 0.01:
-        obst.append(p.Name)
+    if not (lo[0] < x1 - 1e-3 and hi[0] > x0 + 1e-3 and lo[1] < y1 - 1e-3 and hi[1] > y0 + 1e-3 and lo[2] < 2.0 and hi[2] > 0.01):
+        continue
+    for it in items(p):  # item par item : un câble qui part du tableau en plénum n'encombre pas le sol
+        lo, hi = it.bounds
+        if lo[0] < x1 - 1e-3 and hi[0] > x0 + 1e-3 and lo[1] < y1 - 1e-3 and hi[1] > y0 + 1e-3 and lo[2] < 2.0 and hi[2] > 0.01:
+            obst.append(p.Name)
+            break
 tech.append(("Tableau divisionnaire : 1,00 m dégagé devant", f"zone x {x0:.2f}-{x1:.2f}, y {y0:.2f}-{y1:.2f}, h 2,00 : {len(obst)} obstacle(s) {obst}", not obst))
 d_eau = ue.get_psets(td)["KDEMI_Esquisse"].get("Distance_point_eau_m")
 tech.append(("Tableau loin de l'eau", f"{d_eau} m du WC (lave-mains et WC dans le local 07)", d_eau and d_eau > 3))
@@ -235,7 +240,7 @@ for sp in by_name("Split mural"):
                  not over and lo[2] >= 2.2 and bool(wall)))
 resa = [p for p in v5.by_type("IfcBuildingElementProxy") if p.PredefinedType == "PROVISIONFORVOID"]
 rc = penetrations(resa, porteurs, 0.0005)
-tech.append((f"Réservations Ø 0,10 hors structure ({len(resa)})", f"{len(rc)} intersection(s) avec poteaux / voiles / dalle", len(rc) == 0))
+tech.append((f"Réservations hors structure ({len(resa)} : Ø 0,10 et Ø 0,04)", f"{len(rc)} intersection(s) avec poteaux / voiles / dalle", len(rc) == 0))
 liais = by_name("Liaisons frigorifiques")
 lc = penetrations(liais, porteurs, 0.0005)
 tech.append(("Liaisons splits : faux-plafond puis baie arrière existante", f"{len(liais)} faisceaux, {len(lc)} intersection(s) avec la structure", len(lc) == 0 and len(liais) == 2))
@@ -243,6 +248,65 @@ cof = by_name("Coffrage acoustique")
 dims = [tuple((bb(c)[1] - bb(c)[0])[:2].round(2)) for c in cof]
 st = [ue.get_psets(c).get("KDEMI_Hypothese", {}).get("Statut") for c in cof]
 tech.append(("Coffrages EU/EV 0,30 x 0,30 « À relever sur site »", f"{len(cof)} coffrages {[tuple(float(x) for x in d) for d in dims]} ; statut {sorted(set(st))}", all(abs(d[0] - 0.3) < 0.005 and abs(d[1] - 0.3) < 0.005 for d in dims) and set(st) == {"À relever sur site"}))
+# --- lots techniques -----------------------------------------------------------------------------------
+def pset(p, n):
+    return ue.get_psets(p).get(n, {})
+
+
+def circuits_de(p):
+    return [r.RelatingGroup.Name for r in p.HasAssignments if r.is_a("IfcRelAssignsToGroup") and r.RelatingGroup.is_a("IfcDistributionCircuit")]
+
+
+lums = [p for p in v5.by_type("IfcLightFixture") if p.PredefinedType != "SECURITYLIGHTING"]
+k27 = [p for p in lums if "2700" in str(ue.get_psets(p.IsTypedBy[0].RelatingType if p.IsTypedBy else p).get("Pset_LightFixtureTypeCommon", {}).get("ColorTemperature", "2700"))]
+tech.append(("Luminaires 2700 K de la V5 conservés et raccordés", f"{len(lums)} luminaires ; sans circuit : {[p.Name for p in lums if not circuits_de(p)]}",
+             len(lums) == 27 and all(circuits_de(p) for p in lums)))
+elec = [p for p in new if p.is_a() in ("IfcOutlet", "IfcSwitchingDevice", "IfcSensor", "IfcCableSegment") or (p.is_a("IfcLightFixture") and p.PredefinedType == "SECURITYLIGHTING")
+        or (p.is_a("IfcJunctionBox") and "Nourrice" in (p.ObjectType or "") + (p.Name or "")) or (p.is_a("IfcJunctionBox") and p.ObjectType == "Boîte de sol")]
+sans = [p.Name for p in elec if not circuits_de(p) and p.Name not in ("Liaison disjoncteur de branchement -> tableau divisionnaire", "Nappe des départs du tableau (gaine de l'habillage)")]
+nb = {c: sum(1 for p in new if p.is_a(c)) for c in ("IfcOutlet", "IfcSwitchingDevice", "IfcSensor", "IfcCableSegment", "IfcDistributionCircuit")}
+ncirc = len(v5.by_type("IfcDistributionCircuit"))
+tech.append(("Appareillage électrique rattaché à un circuit du TD", f"{len(elec)} appareils / câbles, {ncirc} circuits ; sans circuit : {sans or 'aucun'}", not sans and ncirc >= 10))
+baes = [p for p in new if p.is_a("IfcLightFixture") and p.PredefinedType == "SECURITYLIGHTING"]
+tech.append(("BAES au-dessus de la porte d'entrée et en circulation", f"{len(baes)} BAES : {[p.Name.split(' - ')[1] for p in baes]}",
+             any("porte d'entrée" in p.Name for p in baes) and len(baes) >= 3))
+lm = [p for p in v5.by_type("IfcProduct") if (p.Name or "").endswith(("4350630", "4350631"))]
+pcw = by_name("PC 16 A WC")
+dw = min(aabb_gap(pcw[0], x) for x in lm) if pcw and lm else 0
+tech.append(("Prise du WC hors volumes (≥ 0,60 m du lave-mains)", f"{dw:.2f} m", dw >= 0.60))
+v4_sani = {t: next(p for p in v5.by_type("IfcProduct") if (p.Name or "").endswith(t)) for t in ("4350629", "4350630", "4350631")}
+rac = {t: [r.RelatingElement.Name for r in p.ConnectedFrom] for t, p in v4_sani.items()}
+dup = [p.Name for p in new if p.is_a("IfcSanitaryTerminal") or (p.is_a() == "IfcFlowTerminal")
+       or (p.is_a("IfcBuildingElementProxy") and any(k in (p.Name or "").lower() for k in ("lave-mains", "vasque", "cuvette")))]
+tech.append(("WC et lave-mains V4 conservés, non dupliqués, raccordés en V5", f"doublons : {len(dup)} ; raccords : " + " ; ".join(f"{t} <- {v}" for t, v in rac.items()),
+             not dup and len(rac["4350629"]) >= 2 and rac["4350630"] and rac["4350631"]))
+
+
+def directrice(p):
+    pts = []
+    for it in body(p).Items:
+        if it.is_a("IfcSweptDiskSolid"):
+            pts.append(np.array([q.Coordinates for q in it.Directrix.Points]) / 100.0)
+    return pts
+
+
+pentes = []
+for p in new:
+    r = pset(p, "KDEMI_Plomberie").get("Reseau")
+    if p.is_a("IfcPipeSegment") and r in ("EU", "EV"):
+        for P in directrice(p):
+            for a_, b_ in zip(P[:-1], P[1:]):
+                h = np.hypot(*(b_ - a_)[:2])
+                if h > 0.05:
+                    pentes.append((p.Name, round(float(100 * (a_[2] - b_[2]) / h), 2)))
+tech.append(("Évacuations EU / EV : pente 1 à 3 % (DTU 60.11), mesurée sur l'axe", f"{len(pentes)} tronçons, pentes {sorted(set(x for _, x in pentes))} %",
+             bool(pentes) and all(1.0 <= x <= 3.0 for _, x in pentes)))
+fix = [p for p in new if p.is_a("IfcMechanicalFastener")]
+bad = [p.Name for p in fix if pset(p, "KDEMI_Fixation").get("Traversant") or pset(p, "KDEMI_Fixation").get("Ancrage_mm", 99) > min(60, pset(p, "KDEMI_Fixation").get("Epaisseur_support_mm", 0) / 3)]
+tech.append(("Fixations non traversantes (ancrage ≤ 60 mm et ≤ 1/3 du support)", f"{len(fix)} fixations ; non conformes : {bad or 'aucune'}", bool(fix) and not bad))
+sysh = [s for s in v5.by_type("IfcDistributionSystem") if not s.is_a("IfcDistributionCircuit")]
+arel = [s.Name.split(" - ")[0] for s in sysh if "relever" in str(ue.get_psets(s).get("KDEMI_Reseau", {}).get("Statut", "")) or "vérifier" in str(ue.get_psets(s).get("KDEMI_Reseau", {}).get("Statut", ""))]
+tech.append(("Raccordements aux réseaux de l'immeuble marqués « à relever »", f"{len(sysh)} réseaux ; à relever / vérifier : {arel}", len(arel) == len(sysh)))
 interdits = [p.Name for p in v5.by_type("IfcProduct") if p.is_a() in ("IfcRoof", "IfcStair", "IfcStairFlight") or "TGBT" in (p.Name or "") or "groupe électrogène" in (p.Name or "").lower()]
 tech.append(("Pas de toiture, d'escalier, de TGBT ni de groupe électrogène", f"{len(interdits)} trouvé(s)", not interdits))
 

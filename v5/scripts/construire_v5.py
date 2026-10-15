@@ -654,15 +654,15 @@ for k, (sx0, sy0, sx1, sy1, sz0, sz1) in ((1, SPLIT1), (2, SPLIT2)):
     pump_x = sx1 - 0.06 if k == 1 else sx0 + 0.03
     new("IfcPump", f"Mini-pompe de relevage des condensats - split {k}", styled([box(pump_x - 0.03, sy1 - 0.12, pump_x + 0.03, sy1 - 0.02, sz1, sz1 + 0.05)], "equip"),
         predefined_type="SUMPPUMP", lot=TECH, mat="equip", rep_label="Mini-pompe de relevage des condensats",
-        description="La sortie en baie arrière (+2,70) est plus haute que l'unité : relevage obligatoire", psets=HYP)
+        description="Refoulement des condensats en plénum vers la descente EU/EV 2 (siphon sec) : relevage obligatoire", psets=HYP)
 
-# liaisons frigorifiques + condensats (faisceau Ø 6 cm) : plénum -> vide du doublage V4 -> baie arrière V4
+# liaisons frigorifiques + câble de commande (faisceau Ø 6 cm ; condensats séparés, voir lots_techniques) : plénum -> vide du doublage V4 -> baie arrière V4
 L1 = [(6.43, 5.27, SPLIT1[5] + 0.05), (6.43, 5.27, Z_LIAISONS), (6.43, 6.90, Z_LIAISONS), (6.00, 6.90, Z_LIAISONS),
       (6.00, 7.22, Z_LIAISONS), (4.85, 7.22, Z_LIAISONS), (4.85, 7.22, 2.70), (4.85, 7.75, 2.70)]
 L2 = [(0.13, 3.55, SPLIT2[5] + 0.05), (0.13, 3.55, Z_LIAISONS), (0.60, 3.55, Z_LIAISONS), (0.60, 1.35, Z_LIAISONS),
       (3.25, 1.35, Z_LIAISONS), (3.25, 7.22, Z_LIAISONS), (4.60, 7.22, Z_LIAISONS), (4.60, 7.22, 2.70), (4.60, 7.75, 2.70)]
 for k, pts in ((1, L1), (2, L2)):
-    new("IfcPipeSegment", f"Liaisons frigorifiques et condensats - split {k}", styled([tube(pts, 0.03)], "pvc"),
+    new("IfcPipeSegment", f"Liaisons frigorifiques et câble de commande - split {k}", styled([tube(pts, 0.03)], "pvc"),
         predefined_type="FLEXIBLESEGMENT", lot=TECH, mat="pvc", rep_label="Liaisons split (faux-plafond -> doublage -> baie arrière)",
         description="Faisceau calorifugé sous fourreau : plénum (+3,15), vide technique du doublage V4, sortie par la baie arrière existante vers la courette",
         props={"Traverse_structure": False}, psets=HYP)
@@ -713,7 +713,17 @@ for nm, (cx0, cy0, cx1, cy1) in COFFRAGES.items():
         description="Descente EU/EV des logements, position et diamètre à relever sur site",
         psets={"KDEMI_Hypothese": {"Statut": "À relever sur site", "Source": "Descentes EU/EV de l'immeuble en hypothèse"}})
 
-# ============================ 13. finalisation =======================================
+# ============================ 13. lots techniques (électricité, plomberie, fixations) ======
+def bbox_monde(p):
+    rep = next(r for r in p.Representation.Representations if r.RepresentationIdentifier == "Body")
+    v = np.array(ifcopenshell.geom.create_shape(_gs, p, rep).geometry.verts).reshape(-1, 3)
+    return v.min(0), v.max(0)
+
+
+import lots_techniques  # noqa: E402
+LOTS = lots_techniques.ajouter(globals())
+
+# ============================ 14. finalisation =======================================
 proj = f.by_type("IfcProject")[0]
 f.header.file_name.name = os.path.basename(V5_IFC)
 f.header.file_name.time_stamp = time.strftime("%Y-%m-%dT%H:%M:%S")
