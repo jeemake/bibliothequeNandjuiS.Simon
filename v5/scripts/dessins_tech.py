@@ -28,6 +28,7 @@ from charte_kdemi import FP_MEDIUM, FP_TITRE, ENCRE, TAUPE, TERRE_CUITE, IROKO, 
 from scene import charger, role  # noqa
 import dessin2d as D  # noqa
 import technique as T  # noqa
+from vegetation import est_feuillage, est_vegetal, touffe  # noqa
 
 logging.disable(logging.WARNING)
 plt.rcParams["font.family"] = list(plt.rcParams["font.family"]) + ["DejaVu Sans"]   # repli pour Δ, φ, ρ, Ω, ≈ absents de Jost
@@ -140,6 +141,10 @@ def fond_de_plan(ax, sc, z=1.0, xlim=None, ylim=None, mobilier=True, tracer_wc=T
     for r in R:
         sanit = r["e"]["tag"] in ("4350629", "4350630", "4350631")
         for it in r["items"]:
+            if est_feuillage(it):
+                touffe(ax, it["g"], zz, "plan", col=FOND_TRAIT, lw=D.LW[1] * 0.8)
+                zz += 0.001
+                continue
             fc = "#FAFAFA" if r["role"] == "sol" else "white"
             D.patch(ax, it["g"], fc=fc, ec=FOND_TRAIT if not sanit else SANIT, lw=D.LW[1] * (0.5 if not sanit else 0.9), z=zz)
             zz += 0.001
@@ -148,6 +153,11 @@ def fond_de_plan(ax, sc, z=1.0, xlim=None, ylim=None, mobilier=True, tracer_wc=T
     for r in R:
         g = r["coupe"]
         if g is None:
+            continue
+        if est_vegetal(r["e"]):
+            for c, k in r.get("coupes", []):
+                if not est_feuillage(dict(rgba=k)):
+                    D.patch(ax, c, fc="#F2F2F2", ec=FOND_TRAIT, lw=D.LW[1] * 0.5, z=57)
             continue
         if r["role"] == "structure":
             D.patch(ax, g, fc=FOND_POCHE, ec=FOND_POCHE, lw=D.LW[1], z=60)

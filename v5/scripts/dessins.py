@@ -207,6 +207,7 @@ def oriente(g):
     ps = [shapely.geometry.polygon.orient(q, 1.0) for q in shapely.get_parts(g) if q.geom_type == "Polygon" and q.area > 0]
     return shapely.MultiPolygon(ps) if ps else None
 from ombres import OMBRE_ALPHA, calculer_ombres  # noqa: E402
+from vegetation import VEG, est_feuillage, est_vegetal, touffe, arbre_plan, arbre_elev  # noqa: E402
 
 
 def remplissage(r, it, mode="plan"):
@@ -235,7 +236,7 @@ def sourdine(rgb, garde=0.4):
     return tuple(g + (rgb - g) * garde)
 
 
-def peindre(ax, R, mode="plan", trait_items=True, z0=10, ombre=None):
+def peindre(ax, R, mode="plan", trait_items=True, z0=10, ombre=None, veg="plan"):
     """Algorithme du peintre : items remplis (trait fin), silhouette produit (trait moyen).
     ombre : polygones d'ombre portée (ombres.py), peints sur chaque aplat, sous son trait."""
     z = z0
@@ -245,7 +246,9 @@ def peindre(ax, R, mode="plan", trait_items=True, z0=10, ombre=None):
         ctx = r["role"] in CONTEXTE
         ec = TAUPE if ctx else ENCRE
         for it in r["items"]:
-            if r["role"] == "vitrage":
+            if est_feuillage(it) and r["role"] != "arbre":
+                touffe(ax, it["g"], z, veg)          # végétation : symbole au trait, pas d'aplat vert
+            elif r["role"] == "vitrage":
                 D.patch(ax, it["g"], fc=VERRE, ec=ENCRE, lw=D.LW[1], z=z, alpha=0.55)
             elif ombre is not None and ombre.intersects(it["g"]):
                 D.patch(ax, it["g"], fc=remplissage(r, it, mode), ec="none", z=z)
@@ -254,8 +257,15 @@ def peindre(ax, R, mode="plan", trait_items=True, z0=10, ombre=None):
             else:
                 D.patch(ax, it["g"], fc=remplissage(r, it, mode), ec=ec if trait_items else "none", lw=D.LW[1] * (0.7 if ctx else 1), z=z)
             z += 0.001
-        if r["tout"] is not None and not ctx and r["role"] not in ("sol", "vitrage"):
-            D.patch(ax, r["tout"], fc="none", ec=ENCRE, lw=D.LW[2], z=z)
+        tout = r["tout"]
+        if tout is not None and est_vegetal(r["e"]):     # contour fort sur le pot / la maçonnerie seulement
+            mn = [it["g"] for it in r["items"] if not est_feuillage(it)]
+            fo = [it["g"] for it in r["items"] if est_feuillage(it)]
+            tout = unary_union(mn) if mn else None
+            if tout is not None and fo and tout.difference(unary_union(fo)).area < 0.05 * tout.area:
+                tout = None                                   # pot caché sous le feuillage (plan)
+        if tout is not None and not ctx and r["role"] not in ("sol", "vitrage"):
+            D.patch(ax, tout, fc="none", ec=ENCRE, lw=D.LW[2], z=z)
         z += 0.001
     return z
 
@@ -267,6 +277,12 @@ def pocher(ax, R, z=60):
         if g is None:
             continue
         ro = r["role"]
+        if est_vegetal(r["e"]):        # jardinière / plante : feuillage coupé au trait, seule la maçonnerie est pochée
+            mineral = [(c, k) for c, k in r.get("coupes", []) if not est_feuillage(dict(rgba=k))]
+            if mineral:
+                col = np.mean([k for it in r["e"]["items"] for k in [it[1].mean(0)] if not est_feuillage(dict(rgba=k))], axis=0)
+                D.patch(ax, unary_union([c for c, _ in mineral]), fc=D.eclaircir(col, 0.75), ec=ENCRE, lw=D.LW[2], z=z + 1)
+            continue
         if ro == "structure":
             D.patch(ax, g, fc=POCHE, ec=POCHE, lw=D.LW[4], z=z + 2)
         elif ro == "cloison":
@@ -436,13 +452,22 @@ def A01(sc):
     for e in sc:
         r = role(e)
         lo, hi = bb(e)
-        dessus = lo[2] > 1.0 and r not in ("logements", "fenetre_logt", "luminaire") and e["classe"] != "IfcSlab" and r != "plafond" \
+        dessus = lo[2] > 1.0 and r not in ("logements", "fenetre_logt", "luminaire", "arbre") and e["classe"] != "IfcSlab" and r != "plafond" \
             and not est(e, "Rail", "Réservation", "Chemin", "Liaisons", "Retombée", "pompe", "Enseigne", "Panneau passe")
         if dessus:
             g = D.contour_complet(e, v)
             if est(e, "Pergola"):
                 g = g.convex_hull
             D.patch(ax, g, fc="none", ec=TAUPE if r == "arbre" else ENCRE, lw=D.LW[1], ls=(0, (5, 3)), z=80)
+    # arbres d'alignement : symbole d'architecte (houppier festonné, charpentières, tronc), emprise des houppiers IFC
+    tr = next(e for e in sc if role(e) == "arbre" and bb(e)[1][2] - bb(e)[0][2] > 3.0)
+    tlo, thi = bb(tr)
+    for e in sc:
+        if role(e) == "arbre" and e is not tr:
+            lo, hi = bb(e)
+            cx, cy = (lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2
+            sur_tronc = abs(cx - (tlo[0] + thi[0]) / 2) < 0.3 and abs(cy - (tlo[1] + thi[1]) / 2) < 0.3
+            arbre_plan(ax, cx, cy, (hi[0] - lo[0]) / 2, 80, tronc=0 if sur_tronc else None)   # tronc IFC déjà dessiné (coupé)
     arbre = next(e for e in sc if "Arbre_a_livres" in e["nom"])
     D.patch(ax, D.contour_complet(arbre, v), fc="none", ec=ENCRE, lw=D.LW[1], ls=(0, (5, 3)), z=80)
     etiquettes_espaces(ax, {"01": (4.15, 1.30), "02": (1.05, 1.55), "03": (2.20, 3.85), "04": (1.25, 6.05), "05": (0.83, 4.93),
@@ -575,7 +600,7 @@ def A03(sc):
     R = D.calculer(sc, v, lambda e, r: r not in ("sol_ext", "arbre", "voisin"))
     ax.add_patch(Rectangle((xl[0], zl[0]), xl[1] - xl[0], -0.2 - zl[0], fc="#E2DDD6", ec="none", zorder=1))
     ax.plot(xl, [-0.2, -0.2], color=ENCRE, lw=D.LW[2], zorder=2)
-    peindre(ax, R, ombre=calculer_ombres(R, v, ax.get_xlim(), ax.get_ylim(), "int"))
+    peindre(ax, R, ombre=calculer_ombres(R, v, ax.get_xlim(), ax.get_ylim(), "int"), veg="elev")
     pocher(ax, R)
     for zz in (6.60, 9.90):
         ax.plot([-0.09, 7.59], [zz, zz], color=TAUPE, lw=D.LW[1], ls=(0, (6, 3)), zorder=95)
@@ -626,19 +651,19 @@ def A04(sc):
     ax.add_patch(Rectangle((xl[0], zl[0]), xl[1] - xl[0], -0.12 - zl[0], fc="#DCD8D2", ec="none", zorder=1))
     ax.add_patch(Rectangle((xl[0], -0.12), xl[1] - xl[0], 0.12, fc="#EDEAE5", ec=TAUPE, lw=D.LW[1], zorder=2))
     ax.plot(xl, [-0.12, -0.12], color=ENCRE, lw=D.LW[4], zorder=3)
-    peindre(ax, R, ombre=calculer_ombres(R, v, ax.get_xlim(), ax.get_ylim(), "elev"))
+    peindre(ax, R, ombre=calculer_ombres(R, v, ax.get_xlim(), ax.get_ylim(), "elev"), veg="elev")
     pocher(ax, R)
     # arbres d'alignement (devant le plan de coupe : silhouettes en traits fins)
     va = D.Vue((0, 1, 0), (1, 0, 0), (0, 0, 1))
-    from matplotlib.patches import Ellipse
+    tronc, houppiers = None, []
     for e in sc:
         if role(e) == "arbre":
             lo, hi = bb(e)
             if hi[2] - lo[2] > 3.0:
-                ax.add_patch(Rectangle((lo[0], 0), hi[0] - lo[0], hi[2], fc="white", ec=OLIVE, lw=D.LW[1], zorder=200))
+                tronc = (lo[0], hi[0], 0.0, hi[2])
             else:
-                ax.add_patch(Ellipse(((lo[0] + hi[0]) / 2, (lo[2] + hi[2]) / 2), hi[0] - lo[0], hi[2] - lo[2] + 0.6,
-                                     fc=D.eclaircir((0.37, 0.48, 0.29), 0.18), ec=OLIVE, lw=D.LW[1], zorder=201, alpha=0.85))
+                houppiers.append(((lo[0] + hi[0]) / 2, (lo[2] + hi[2]) / 2, hi[0] - lo[0], hi[2] - lo[2] + 0.6))
+    arbre_elev(ax, tronc, houppiers, 200)
     for zz in (6.60, 9.90):
         ax.plot([-0.09, 6.69], [zz, zz], color=TAUPE, lw=D.LW[1], ls=(0, (6, 3)), zorder=95)
     label(ax, 3.3, 10.6, "LOGEMENTS EXISTANTS (hors lot, esquisse)", size=5.4, col=TAUPE, z=420)
@@ -675,14 +700,14 @@ def A04(sc):
                           ("aplat", "Terre cuite (portail, claustras)", dict(fc=D.eclaircir((0.70, 0.35, 0.24), 0.42))),
                           ("aplat", "Iroko (pergola, menuiseries)", dict(fc=D.eclaircir((0.60, 0.42, 0.26), 0.42))),
                           ("verre", "Vitrage V4"),
-                          ("aplat", "Arbres d'alignement (contexte V4)", dict(fc=D.eclaircir((0.37, 0.48, 0.29), 0.22), ec=OLIVE))])
+                          ("trait", "Arbres d'alignement (contexte V4), végétation au trait", dict(color=VEG))])
     p.cartouche("1/50")
     p.enregistrer("elevation_devanture")
 
 
 def _elev(p, sc, ax, v, garder, decal_rep, nums, titre, x_titre, y_titre):
     R = D.calculer(sc, v, garder)
-    peindre(ax, R, ombre=calculer_ombres(R, v, ax.get_xlim(), ax.get_ylim(), "int"))
+    peindre(ax, R, ombre=calculer_ombres(R, v, ax.get_xlim(), ax.get_ylim(), "int"), veg="elev")
     pocher(ax, R)
     vus = bulles_reperes(ax, R, nums, decal=decal_rep)
     p.T(x_titre, y_titre, titre, 7.5, ENCRE, fontproperties=FP_MEDIUM)

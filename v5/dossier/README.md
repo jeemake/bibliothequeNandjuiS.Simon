@@ -2,6 +2,8 @@
 
 A3 paysage, 21 pages, charte K&Démi v2 : papier blanc, texte gris (#4A4A4A, secondaire #8C8C8C), une seule famille Archivo (titres SemiBold, texte Regular, capitales Medium), terre cuite en accent, indigo rare, logo v3 A. Grille invisible : marges 14 mm, gouttières 5 mm, panneau de droite commun avec les planches A01 à A08 et T01 à T05.
 
+Indice E : végétation redessinée au trait comme sur un dessin d'archi classique, sans aplat vert ni disque (`v5/scripts/vegetation.py`). En plan : arbres d'alignement en houppier festonné avec charpentières rayonnantes et point de tronc (A01), touffes des jardinières et plante V01 en contour festonné avec nervures (A01, fond de plan T01 à T03). En coupe et élévation : arbres en entourage (tronc effilé, charpentières, houppier festonné, A04), arbustes des jardinières et plante V01 en touffe arrondie avec tiges en éventail (A03 à A06). Trait gris-vert très sourd #7E8A78, gris de fond sur les planches T. Tailles et positions = emprises IFC, ombres inchangées. Seuls ces éléments changent (contrôle pixel avant/après).
+
 Indice D : ombres portées légères sur les planches A01 à A06 (pages 5 à 10), calculées sur la géométrie IFC par carte d'ombres (`v5/scripts/ombres.py`) : soleil conventionnel à 45° venant du haut à gauche, aplat noir à 15 % sans dégradé, peint sous les traits et au-dessus du sol. En plan, ombres courtes (0,25 m par mètre de hauteur sous le plan de coupe). En coupe et élévation, profondeur d'ombre égale à la profondeur réelle du débord, limitée aux objets proches de la paroi (1,0 m le long du rayon à l'intérieur, 1,6 m en façade). T01 à T05 inchangées.
 
 Indice C : planches T01 à T05 relues pour le technicien : fond de plan en gris clair (porteurs #BDBDBD, traits #C8C8C8), une couleur saturée par lot, identique sur les 5 planches (courants forts rouge #D62828, courants faibles bleu #1F5FBF, éclairage ocre #E08A00, BAES vert #1E9E4A, AEP cyan #00A3C4, EU/EV brun #8B5A2B avec EU en tireté et EV en continu, clim et condensats violet #7B3FA0, réservations magenta #C2185B), symboles plus épais que le fond, légende par lot au même endroit sur chaque planche (pastille, symbole à taille réelle, libellé 8 pt, quantité comptée sur la planche), repères de circuits identiques au schéma unifilaire T05.
@@ -10,8 +12,8 @@ Indice B : fond beige retiré, DM Serif Display et Jost remplacés par Archivo, 
 
 | Fichier | Contenu |
 |---|---|
-| `Decimo_ESQ_V5_Dossier_A3_v4.pdf` | Dossier final : couverture, projet, identité, D.A, A01 à A08, rendus R1 à R3, T01 à T05, cohérence |
-| `Decimo_ESQ_V5_Dossier_A3_v4.pptx` | Même dossier en version modifiable (aussi importé en Google Slides) |
+| `Decimo_ESQ_V5_Dossier_A3_v5.pdf` | Dossier final : couverture, projet, identité, D.A, A01 à A08, rendus R1 à R3, T01 à T05, cohérence |
+| `Decimo_ESQ_V5_Dossier_A3_v5.pptx` | Même dossier en version modifiable (aussi importé en Google Slides) |
 | `rendus/` | Rendus finaux tirés des vues `v5/vues_rendu` (fal nano-banana-pro/edit), `01_devanture_fal_brut.jpg` = sortie brute avant retouche |
 | `scripts/layout.py`, `scripts/render.py` | Mise en page unique vers PDF (reportlab) et PPTX (python-pptx) |
 | `scripts/gen_rendus.py` | Génération des rendus depuis les vues IFC |

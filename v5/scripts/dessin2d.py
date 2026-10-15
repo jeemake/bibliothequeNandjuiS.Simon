@@ -123,7 +123,7 @@ def calculer(scene, vue, garder=lambda e, r: True):
         r = role(e)
         if not garder(e, r):
             continue
-        items, cuts = [], []
+        items, cuts, cuts_rgba = [], [], []
         for fc, rgba in e["items"]:
             T = e["verts"][fc]
             if vue.coupe is not None:
@@ -132,6 +132,7 @@ def calculer(scene, vue, garder=lambda e, r: True):
                 sc = section(T, n, c, vue)
                 if sc is not None:
                     cuts.append(sc)
+                    cuts_rgba.append((sc, rgba.mean(0)))
             else:
                 Tk = T
             if len(Tk) == 0:
@@ -143,7 +144,7 @@ def calculer(scene, vue, garder=lambda e, r: True):
         if not items and not cuts:
             continue
         tot = unary_union([i["g"] for i in items]) if items else None
-        res.append(dict(e=e, role=r, items=items, coupe=unary_union(cuts) if cuts else None, tout=tot,
+        res.append(dict(e=e, role=r, items=items, coupe=unary_union(cuts) if cuts else None, coupes=cuts_rgba, tout=tot,
                         proche=max([i["proche"] for i in items], default=-1e9)))
     res.sort(key=lambda x: x["proche"])
     return res

@@ -74,7 +74,7 @@ def panel(els, code, title, sub, meta, sections, planche, echelle="sans échelle
     # cartouche
     els.append(("line", TX, 246, TX + TW, 246, FILET, 0.3))
     rows = [("Projet", "Bibliothèque Decimo · RDC sous logements, Deux Plateaux, Abidjan"), ("Phase", "ESQ V5 · aménagement sur existant V4"),
-            ("Planche", planche), ("Échelle", echelle + " · format A3 paysage"), ("Maquette", "v5/DECIMO_ESQ_V5.ifc (IFC4)"), ("Date", "15 octobre 2026 · indice D")]
+            ("Planche", planche), ("Échelle", echelle + " · format A3 paysage"), ("Maquette", "v5/DECIMO_ESQ_V5.ifc (IFC4)"), ("Date", "15 octobre 2026 · indice E")]
     yy = 249.5
     for a, b in rows:
         els.append(("text", TX, yy, 22, a, S("lab"))); els.append(("text", TX + 22, yy, TW - 22, b, S("val"))); yy += 4.6
@@ -161,7 +161,7 @@ def pages():
     e.append(("line", TX, 242, TX + TW, 242, FILET, 0.3))
     e.append(("text", TX, 246, TW, "DOSSIER DE PRÉSENTATION", S("lab", size=6.8)))
     e.append(("text", TX, 251, TW, "D.A · plans · coupe · élévations · vues 3D · axonométries · électricité · plomberie · détails techniques", S("small")))
-    e.append(("text", TX, 263, TW, "15 octobre 2026 · indice D", S("small")))
+    e.append(("text", TX, 263, TW, "15 octobre 2026 · indice E", S("small")))
     e.append(("text", TX, 274, TW, "En couverture : l'arbre à livres sous l'oculus indigo, rendu tiré de la vue 04 de la maquette IFC V5", S("cap")))
     e.append(("text", TX, 289, 60, "K&Démi · architecture · intérieur", S("foot")))
     e.append(("text", TX + TW - 60, 289, 60, "01", S("foot_r")))
