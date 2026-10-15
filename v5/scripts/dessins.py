@@ -4,6 +4,8 @@ A01 plan RDC (coupe +1,00)          A02 plan de faux-plafond et réseaux (coupe 
 A03 coupe AA (x = 4,75, vers l'ouest) A04 élévation devanture sur rue (logements esquissés)
 A05 élévations intérieures Est, Nord  A06 élévations intérieures Sud, Ouest
 A07 vues 3D (rendus v5/vues_rendu)    A08 axonométries (aménagement coupé à +2,40 ; technique)
+A09 électricité CFO / CFA 1/50       A10 plomberie AEP / EU / EV / condensats 1/50
+A11 détails techniques 1/10 et 1/20 (v5/scripts/dessins_lots.py)
 Usage : python3 v5/scripts/dessins.py [A01 A02 ...]
 """
 import os, sys, hashlib, logging
@@ -130,7 +132,7 @@ class Planche:
         base = os.path.join(DESSINS, f"{self.num}_{nom}")
         self.fig.savefig(base + ".pdf")
         self.fig.savefig(base + ".svg")
-        self.fig.savefig(base + ".png", dpi=200)
+        self.fig.savefig(base + ".png", dpi=300)
         plt.close(self.fig)
         print(base + ".png|pdf|svg")
 
@@ -854,6 +856,8 @@ def A08(sc):
 PLANCHES = {"A01": A01, "A02": A02, "A03": A03, "A04": A04, "A05": A05, "A06": A06, "A07": A07, "A08": A08}
 
 if __name__ == "__main__":
+    import dessins_lots
+    PLANCHES.update(dessins_lots.PLANCHES)
     sc = charger()
     for k in (sys.argv[1:] or PLANCHES):
         PLANCHES[k](sc)
