@@ -1,6 +1,6 @@
 Fichier : v5/DECIMO_ESQ_V5.ifc
 Schéma : IFC4
-Entités : 38961
+Entités : 46125
 ifcopenshell 0.9.0
 
 == ifcopenshell.validate (schéma + règles EXPRESS) ==
@@ -8,8 +8,8 @@ Erreurs : 0
 Avertissements : 0
 
 == Géométrie (ifcopenshell.geom, tous les IfcProduct avec représentation) ==
-Produits avec représentation : 225
-Géométrie OK : 225
+Produits avec représentation : 367
+Géométrie OK : 367
 Échecs : 0
 
-Répartition : IfcBuildingElementProxy 84, IfcCableCarrierSegment 3, IfcCommunicationsAppliance 1, IfcCovering 16, IfcDoor 6, IfcElectricDistributionBoard 1, IfcFlowTerminal 1, IfcFurnishingElement 30, IfcFurniture 4, IfcJunctionBox 1, IfcLightFixture 27, IfcMember 3, IfcOpeningElement 10, IfcPipeSegment 4, IfcPlate 1, IfcProtectiveDevice 1, IfcPump 2, IfcSlab 1, IfcSpace 8, IfcUnitaryEquipment 2, IfcWall 5, IfcWallStandardCase 11, IfcWindow 3
+Répartition : IfcBuildingElementProxy 88, IfcCableCarrierSegment 20, IfcCableSegment 19, IfcCommunicationsAppliance 2, IfcCovering 16, IfcDoor 6, IfcElectricDistributionBoard 1, IfcFlowMeter 1, IfcFlowTerminal 1, IfcFurnishingElement 30, IfcFurniture 4, IfcJunctionBox 5, IfcLightFixture 31, IfcMechanicalFastener 27, IfcMember 3, IfcOpeningElement 10, IfcOutlet 30, IfcPipeFitting 7, IfcPipeSegment 14, IfcPlate 2, IfcProtectiveDevice 1, IfcPump 2, IfcSensor 1, IfcSlab 1, IfcSpace 8, IfcSwitchingDevice 6, IfcUnitaryEquipment 2, IfcValve 8, IfcWall 5, IfcWallStandardCase 11, IfcWasteTerminal 2, IfcWindow 3
