@@ -414,6 +414,7 @@ def A01(sc):
         r = role(e)
         lo, hi = bb(e)
         dessus = lo[2] > 1.0 and r not in ("logements", "fenetre_logt", "luminaire") and e["classe"] != "IfcSlab" and r != "plafond" \
+            and not (e.get("lot") or "").startswith("Technique - ") \
             and not est(e, "Rail", "Réservation", "Chemin", "Liaisons", "Retombée", "pompe", "Enseigne", "Panneau passe")
         if dessus:
             g = D.contour_complet(e, v)
@@ -483,27 +484,45 @@ def A02(sc):
         for s in shapely.get_parts(g):
             if s.geom_type == "LineString":
                 ax.plot(*np.asarray(s.coords).T, color=TAUPE, lw=D.LW[1] * 0.6, zorder=z + 0.5)
-    # réseaux en plénum (tracé complet, tiretés de couleur)
+    import dessins_lots as DL  # noqa
+    DL._IFC.clear()
+    I = DL.ifc()
+    cond_guids = {g for g, p in I["prods"].items() if p["ps"].get("KDEMI_Plomberie", {}).get("Reseau") == "Condensats"
+                  or (p["nom"] or "").startswith("Condensats")}
+    # réseaux en plénum uniquement (z min > 2,00)
     for e in sc:
         c = e["classe"]
+        if c not in ("IfcPipeSegment", "IfcCableCarrierSegment"):
+            continue
+        lo, hi = bb(e)
+        if lo[2] <= 2.0:
+            continue
         col = {"IfcPipeSegment": INDIGO, "IfcCableCarrierSegment": TERRE_CUITE}.get(c)
         if est(e, "Descente"):
             col = OLIVE
-        if est(e, "Réservation"):
-            col = ENCRE
+        if e["guid"] in cond_guids or est(e, "Condensats"):
+            col = DL.COND
         if col is None:
             continue
+        ls = (0, (3, 1.2)) if col == DL.COND else (0, (4, 1.5))
         for fc, _ in e["items"]:
             g = D.silhouette(v.to2d(e["verts"][fc]))
-            D.patch(ax, g, fc=col if est(e, "Réservation") else "none", ec=col, lw=D.LW[2], z=150,
-                    ls="-" if est(e, "Réservation", "Descente") else (0, (4, 1.5)))
+            D.patch(ax, g, fc="none", ec=col, lw=D.LW[2], z=150, ls=ls if not est(e, "Descente") else "-")
     for e in sc:
         if est(e, "Réservation"):
             lo, hi = bb(e)
             cx, cy = (lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2
-            nom = e["nom"].split(" ")[1]
-            dx, dy = {"R1": (0.25, -0.35), "R2": (-0.30, -0.35), "R3": (0.25, 0.35), "R4": (-0.25, 0.35), "R5": (0.0, -0.32)}[nom]
-            label(ax, cx + dx, cy + dy, nom, size=5.0, col=ENCRE, z=420)
+            code = e["nom"].split(" ")[1]
+            dx, dy = {"R1": (0.25, -0.35), "R2": (-0.30, -0.35), "R3": (0.25, 0.35), "R4": (-0.25, 0.35), "R5": (0.0, -0.32),
+                      "R6": (0.22, 0.30), "R7": (-0.22, 0.28), "R8": (0.18, -0.25)}.get(code, (0.0, 0.0))
+            label(ax, cx + dx, cy + dy, code, size=5.0, col=ENCRE, z=420)
+    for e in sc:
+        if e["classe"] == "IfcLightFixture" and e.get("ptype") == "SECURITYLIGHTING":
+            c = D.contour_complet(e, v).centroid
+            ax.add_patch(Rectangle((c.x - 0.06, c.y - 0.03), 0.12, 0.06, fc=DL.VERT, ec=ENCRE, lw=D.LW[1], zorder=320))
+        if e["classe"] == "IfcCommunicationsAppliance" and "Wi-Fi" in e["nom"]:
+            c = D.contour_complet(e, v).centroid
+            ax.add_patch(Circle((c.x, c.y), 0.05, fc=INDIGO, ec=INDIGO, lw=D.LW[1], zorder=320))
     ext = {}
     for n, mot in ((32, "Panneau passe"), (31, "Réservation R3"), (29, "split 1"), (30, "Chemin de câbles tableau"), (28, "pompe de relevage des condensats - split 1"),
                    (22, "Anneau LED indirect"), (6, "Oculus")):
@@ -529,17 +548,20 @@ def A02(sc):
               "cheminent en plénum puis dans le doublage des niches, et sortent par la baie arrière",
               "EXISTANTE (imposte : panneau passe-liaisons 32, réservations R3, R4 Ø 0,10).",
               "Splits 9 000 BTU/h en partie haute de murs pleins, hors aplomb des tables ;",
-              "condensats relevés par mini-pompe (pas d'évacuation gravitaire possible).",
+              "condensats refoulés par mini-pompe vers la descente EU/EV 2 (siphon sec).",
               "Câbles : placard technique › plénum (R5 dans cloison placo) › tableau divisionnaire.",
-              "Descentes EU/EV de l'immeuble : coffrages 0,30 × 0,30, position à relever sur site."]:
+              "Descentes EU/EV de l'immeuble : coffrages 0,30 × 0,30, position à relever sur site.",
+              "Réseaux détaillés : voir planches A09 (électricité), A10 (plomberie), A11 (détails)."]:
         p.ligne(s, 5.7, dy=3.5)
     p.y += 2
     legende_reperes(p, sorted(set(vus) | {22, 28, 29, 30, 31, 32}), n_col=1)
     legende_graphique(p, [("poche", "Existant porteur coupé à +2,00"),
                           ("aplat", "Faux-plafond acoustique, trame 0,60", dict(fc=D.eclaircir((0.93, 0.91, 0.86), 0.4))),
-                          ("trait", "Liaisons frigorifiques + condensats (plénum, doublage)", dict(color=INDIGO, ls=(0, (4, 1.5)), lw=D.LW[2])),
+                          ("trait", "Liaisons frigorifiques (plénum, doublage)", dict(color=INDIGO, ls=(0, (4, 1.5)), lw=D.LW[2])),
+                          ("trait", "Condensats refoulés (plénum, R8)", dict(color=DL.COND, ls=(0, (3, 1.2)), lw=D.LW[2])),
                           ("trait", "Chemin de câbles 80 × 40 en plénum", dict(color=TERRE_CUITE, ls=(0, (4, 1.5)), lw=D.LW[2])),
-                          ("trait", "Descente EU/EV Ø 100 en coffrage (hypothèse)", dict(color=OLIVE, lw=D.LW[2]))])
+                          ("trait", "Descente EU/EV Ø 100 en coffrage (hypothèse)", dict(color=OLIVE, lw=D.LW[2])),
+                          ("aplat", "BAES (E7) / AP Wi-Fi (VDI)", dict(fc=DL.VERT))])
     p.cartouche("1/50")
     p.enregistrer("plan_faux_plafond_reseaux")
 
@@ -706,7 +728,8 @@ def A05(sc):
               "Split 1 en partie haute du mur est, au-dessus des rayonnages B01 et hors",
               "aplomb des tables ; mini-pompe de relevage (rep. 28).",
               "Fond : niches V4 et doublage cintré conservés ; liaisons dans le doublage,",
-              "sortie par l'imposte de la baie arrière existante (rep. 31, 32)."]:
+              "sortie par l'imposte de la baie arrière existante (rep. 31, 32).",
+              "Réseaux : voir A09 (électricité), A10 (plomberie), A11 (détails)."]:
         p.ligne(s, 5.9, dy=3.6)
     p.y += 2
     legende_reperes(p, sorted(set(v1) | set(v2r)), n_col=1)
@@ -751,7 +774,8 @@ def A06(sc):
               "l'immeuble, baie informatique, coffret des liaisons clim (rep. 3).",
               "Split 2 en partie haute du mur mitoyen de la réunion, hors aplomb de la table.",
               "Coffrages acoustiques 0,30 × 0,30 des descentes EU/EV (rep. 33) :",
-              "« À relever sur site ». Pas de TGBT ni de groupe électrogène."]:
+              "« À relever sur site ». Pas de TGBT ni de groupe électrogène.",
+              "Réseaux : voir A09 (électricité), A10 (plomberie), A11 (détails)."]:
         p.ligne(s, 5.9, dy=3.6)
     p.y += 2
     legende_reperes(p, sorted(set(v1) | set(v2r)), n_col=1)
@@ -815,9 +839,12 @@ def A08(sc):
                            and e["tag"] not in ("4350710", "4350711"))
     tech = np.array([role(sc[i]) == "technique" for i in IT])
     CT = CT.copy()
-    pal = {"IfcPipeSegment": (0.18, 0.24, 0.43), "IfcCableCarrierSegment": (0.71, 0.35, 0.24), "IfcUnitaryEquipment": (0.96, 0.96, 0.95),
-           "IfcPump": (0.25, 0.25, 0.25), "IfcElectricDistributionBoard": (0.85, 0.75, 0.2), "IfcBuildingElementProxy": (0.1, 0.1, 0.1),
-           "IfcPlate": (0.15, 0.15, 0.15)}
+    pal = {"IfcPipeSegment": (0.18, 0.24, 0.43), "IfcCableCarrierSegment": (0.71, 0.35, 0.24), "IfcCableSegment": (0.12, 0.12, 0.14),
+           "IfcUnitaryEquipment": (0.96, 0.96, 0.95), "IfcPump": (0.25, 0.25, 0.25), "IfcElectricDistributionBoard": (0.85, 0.75, 0.2),
+           "IfcBuildingElementProxy": (0.1, 0.1, 0.1), "IfcPlate": (0.15, 0.15, 0.15), "IfcOutlet": (0.55, 0.55, 0.55),
+           "IfcSwitchingDevice": (0.45, 0.45, 0.45), "IfcValve": (0.25, 0.45, 0.75), "IfcPipeFitting": (0.25, 0.45, 0.75),
+           "IfcFlowMeter": (0.30, 0.55, 0.85), "IfcWasteTerminal": (0.37, 0.48, 0.29), "IfcMechanicalFastener": (0.35, 0.35, 0.38),
+           "IfcJunctionBox": (0.71, 0.35, 0.24), "IfcSensor": (0.40, 0.40, 0.42)}
     for i in np.unique(IT[tech]):
         e = sc[i]
         c = pal.get(e["classe"])
@@ -834,7 +861,7 @@ def A08(sc):
     mult = lambda a, b, k: Image.fromarray((np.asarray(a, float) * (1 - k + k * np.asarray(b, float)[..., None] / 255)).astype(np.uint8))
     sh1, sh2 = mult(sh1, tr1, 0.35), mult(sh2, tr2, 0.55)
     for k, (img, tit) in enumerate(((sh1, "Axonométrie de l'aménagement, coupe horizontale à +2,40 (dalle, faux-plafonds et pergola masqués)"),
-                                    (sh2, "Axonométrie technique, dalle masquée : réseaux en plénum au-dessus du faux-plafond — liaisons splits (indigo), chemins de câbles (terre cuite), descentes EU/EV (olive)"))):
+                                    (sh2, "Axonométrie technique : câbles, goulottes, AEP/EU/EV, condensats, appareils et fixations (lots techniques A09-A11)"))):
         img.save(os.path.join(cache, f"axo_{k + 1}.png"))
         y = 10 + k * 140
         a = p.fig.add_axes([6 / W, 1 - (y + 130) / H, 278 / W, 130 / H])
