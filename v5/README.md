@@ -18,6 +18,18 @@ RDC sous logements, Abidjan, un seul niveau (environ 6,78 × 7,68 m hors œuvre)
 | `rapports/espaces.csv`, `rapports/reperes.csv` | Surfaces des espaces, nomenclature des repères 1 à 33 |
 | `scripts/` | Chaîne complète (voir ci-dessous) |
 
+## Lots techniques (`technique/`)
+
+`DECIMO_ESQ_V5_tech.ifc` est la V5 avec, en plus, les équipements électriques, courants faibles et AEP/EU/EV. Elle compte 78 produits ajoutés, ainsi que les circuits (`IfcDistributionCircuit`) et les réseaux (`IfcDistributionSystem`). On en tire cinq planches A3 :
+
+- T01 courants forts ;
+- T02 courants faibles, éclairage et BAES ;
+- T03 AEP/EU/EV ;
+- T04 détails ;
+- T05 schéma unifilaire et bilan.
+
+La note `technique/NOTE_TECHNIQUE.md` donne les hypothèses, les normes et les points à relever. Scripts : `technique.py` (données), `construire_tech.py`, `dessins_tech.py` et `verif_tech.py`. La vérification `verif_v4_v5.py --v5 v5/DECIMO_ESQ_V5_tech.ifc` confirme 0 écart sur l'existant.
+
 ## Régénérer
 
 ```bash
