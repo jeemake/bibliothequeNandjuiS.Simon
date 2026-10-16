@@ -1,0 +1,26 @@
+nano-banana-pro/edit 2K int_rdc 0.15
+nano-banana-pro/edit 2K mood 0.15
+nano-banana-pro/edit 2K int_r1 0.15
+nano-banana-pro/edit 2K ext 0.15
+nano-banana-pro/edit 2K mood v2 (retry) 0.15
+nano-banana-pro/edit 2K devanture try1 0.15
+nano-banana-pro/edit 2K devanture try2 0.15
+nano-banana-pro/edit 2K rendu final 01_devanture 0.15
+nano-banana-pro/edit 2K rendu final 02_interieur_entree 0.15
+nano-banana-pro/edit 2K rendu final 03_interieur_devanture 0.15
+nano-banana-pro/edit 2K rendu final 04_arbre 0.15
+nano-banana-pro/edit 2K rendu final 05_coin_lecture 0.15
+nano-banana-pro/edit 2K rendu final 02_interieur_entree 0.15
+nano-banana-pro/edit 2K rendu final 01_devanture 0.15
+nano-banana-pro/edit 2K genz G1_rue_crepuscule 0.15
+nano-banana-pro/edit 2K genz G3_accueil_vignette 0.15
+nano-banana-pro/edit 2K genz G2_vitrine_coin_lecture 0.15
+nano-banana-pro/edit 2K genz G4_arbre_photo 0.15
+nano-banana-pro/edit 2K genz G4_arbre_photo 0.15
+nano-banana-pro/edit 2K genz G2_vitrine_coin_lecture 0.15
+nano-banana-pro/edit 2K genz G1_rue_crepuscule 0.15
+nano-banana-pro/edit 2K genz G3_accueil_vignette 0.15
+nano-banana-pro/edit 2K genz G2_vitrine_coin_lecture 0.15
+nano-banana-pro/edit 2K genz G4_arbre_photo 0.15
+nano-banana-pro/edit 2K genz G1_rue_crepuscule 0.15
+nano-banana-pro/edit 2K genz G4_arbre_photo 0.15
